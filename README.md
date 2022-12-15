@@ -25,7 +25,7 @@ Sample size is the amount of data-points the controller will store in cache befo
 # Deploy - Helm
 
 ```bash
-$ helm install https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.1.0/kube-reqsizer-0.1.0.tgz
+helm install https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.1.0/kube-reqsizer-0.1.0.tgz
 ```
 # Development
 ## Getting Started
