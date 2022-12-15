@@ -1,3 +1,6 @@
+sampleSize: 1
+enabledAnnotation: false
+
 controllerManager:
   kubeRbacProxy:
     image:
