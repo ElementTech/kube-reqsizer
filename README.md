@@ -22,7 +22,7 @@ Kube-reqsizer has two primary custom flags:
 
 Sample size is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size.
 
-### Deploy - Helm
+# Deploy - Helm
 
 ```bash
 $ helm install https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.1.0/kube-reqsizer-0.1.0.tgz
