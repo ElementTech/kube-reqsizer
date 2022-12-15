@@ -158,8 +158,8 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		data, err := r.ClientSet.RESTClient().Get().AbsPath(fmt.Sprintf("apis/metrics.k8s.io/v1beta1/namespaces/%v/pods/%v", pod.Namespace, pod.Name)).DoRaw(ctx)
 
 		if err != nil {
-			// log.Error(err, "failed to get stats from pod")
-			return ctrl.Result{}, nil
+			log.Error(err, "failed to get stats from pod")
+			return ctrl.Result{}, err
 		}
 		PodUsageData := GeneratePodRequestsObjectFromRestData(data)
 		// PodRequestsData := GetPodRequests(pod)
