@@ -33,19 +33,19 @@ spec:
           value: {{ .Values.kubernetesClusterDomain }}
         image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: Always
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        name: manager
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
+        # livenessProbe:
+        #   httpGet:
+        #     path: /healthz
+        #     port: 8081
+        #   initialDelaySeconds: 15
+        #   periodSeconds: 20
+        # name: manager
+        # readinessProbe:
+        #   httpGet:
+        #     path: /readyz
+        #     port: 8081
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 10
         resources: {{- toYaml .Values.controllerManager.manager.resources | nindent 10
           }}
         securityContext:

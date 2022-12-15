@@ -1,5 +1,8 @@
 sampleSize: 1
 enabledAnnotation: false
+# Namespace annotation filter
+# Scale up / scale down requests
+# Timestamp per sample to restrict pod restarts
 
 controllerManager:
   kubeRbacProxy:
