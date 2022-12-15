@@ -1,6 +1,6 @@
 domain: auto.request.operator
 layout:
 - go.kubebuilder.io/v3
-projectName: auto-request-operator
-repo: github.com/jatalocks/auto-request-operator
+projectName: kube-reqsizer
+repo: github.com/jatalocks/kube-reqsizer
 version: "3"

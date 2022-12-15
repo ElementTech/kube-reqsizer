@@ -22,7 +22,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"github.com/jatalocks/auto-request-operator/controllers"
+	"github.com/jatalocks/kube-reqsizer/controllers"
 	"github.com/labstack/gommon/log"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -79,7 +79,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "d84d636a.padok.fr",
+		LeaderElectionID:       "d84d636a.kube-reqsizer",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

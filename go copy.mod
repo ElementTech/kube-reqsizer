@@ -1,4 +1,4 @@
-module github.com/jatalocks/auto-request-operator
+module github.com/jatalocks/kube-reqsizer
 
 go 1.19
 
