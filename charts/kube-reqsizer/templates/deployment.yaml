@@ -36,8 +36,8 @@ spec:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
-        - -annotation-filter={{.Values.enabledAnnotation}}
-        - -sample-size={{.Values.sampleSize}}
+        - --annotation-filter={{.Values.enabledAnnotation}}
+        - --sample-size={{.Values.sampleSize}}
         command:
         - /manager
         env:
