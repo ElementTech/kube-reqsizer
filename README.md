@@ -1,9 +1,29 @@
 # kube-reqsizer
-// TODO(user): Add simple overview of use/purpose
+![alt text](/assets/example.png)
+
+**kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and reduce their requests based on the average usage.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
 
+Kube-reqsizer has two primary custom flags:
+
+```
+-annotation-filter bool
+    
+    Enable a annotation filter for pod scraping. Enabling this will ensure that the controller only sets requests of controllers of which pods have the annotation. (auto.request.operator/optimize=true)
+
+-sample-size int
+
+    The sample size to create an average from when reconciling. (default 1)
+```
+
+Sample size is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size.
+
+# Deploy
+
+// todo
+
+# Development
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
@@ -41,9 +61,6 @@ UnDeploy the controller to the cluster:
 make undeploy
 ```
 
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
 ### How it works
 This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
 
@@ -51,7 +68,7 @@ It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controlle
 which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
 
 ### Test It Out
-1. Install the CRDs into the cluster:
+1. Install the controller into the cluster:
 
 ```sh
 make install
