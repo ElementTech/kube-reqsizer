@@ -1,0 +1,6 @@
+domain: auto.request.operator
+layout:
+- go.kubebuilder.io/v3
+projectName: auto-request-operator
+repo: github.com/jatalocks/auto-request-operator
+version: "3"
