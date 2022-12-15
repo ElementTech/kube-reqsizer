@@ -83,6 +83,7 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		log.Error(err, err.Error())
 		os.Exit(1)
 	}
 
@@ -110,22 +111,26 @@ func main() {
 		EnableLabel: enableLabel,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
+		log.Error(err, err.Error())
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
+		log.Error(err, err.Error())
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		log.Error(err, err.Error())
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
+		log.Error(err, err.Error())
 		os.Exit(1)
 	}
 }

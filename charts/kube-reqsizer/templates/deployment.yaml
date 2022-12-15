@@ -19,13 +19,13 @@ spec:
     spec:
       containers:
       - args:
-        # - --health-probe-bind-address=:8081
-        # - --metrics-bind-address=127.0.0.1:8080
-        # - --leader-elect
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
         - --annotation-filter={{.Values.enabledAnnotation}}
         - --sample-size={{.Values.sampleSize}}
-        # - --zap-log-level=debug
-        # - --zap-stacktrace-level=info
+        - --zap-log-level=debug
+        - --zap-stacktrace-level=info
         command:
         - /manager
         env:
