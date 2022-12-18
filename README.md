@@ -1,5 +1,5 @@
 # kube-reqsizer
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/explorium-ai/kube-reqsizer)](https://img.shields.io/github/v/release/explorium-ai/kube-reqsizer)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/jatalocks/kube-reqsizer)](https://img.shields.io/github/v/release/jatalocks/kube-reqsizer)
 <!-- [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kube-reqsizer)](https://artifacthub.io/packages/search?repo=kube-reqsizer) -->
 ![alt text](/assets/example.png)
 
