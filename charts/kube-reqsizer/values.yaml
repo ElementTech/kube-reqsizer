@@ -17,7 +17,7 @@ controllerManager:
         cpu: 1
         memory: 5Gi
       requests:
-        cpu: 500m
+        cpu: 0.5
         memory: 100Mi
   replicas: 1
 kubernetesClusterDomain: cluster.local
