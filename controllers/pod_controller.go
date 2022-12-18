@@ -44,9 +44,6 @@ func cacheKeyFunc(obj interface{}) (string, error) {
 var cacheStore = cache.NewTTLStore(cacheKeyFunc, 48*time.Hour)
 
 // Reconcile handles a reconciliation request for a Pod.
-// If the Pod has the podHasAnnotation annotation, then Reconcile
-// will make sure the podNameLabel label is present with the correct value.
-// If the annotation is absent, then Reconcile will make sure the label is too.
 func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("pod", req.NamespacedName)
 
@@ -78,7 +75,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 		if err != nil {
 			log.Error(err, "failed to get stats from pod")
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
 		PodUsageData := GeneratePodRequestsObjectFromRestData(data)
 
