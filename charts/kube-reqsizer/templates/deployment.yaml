@@ -48,7 +48,7 @@ spec:
           periodSeconds: 10
         {{- with .Values.controllerManager.manager.resources }}
         resources:
-          {{- toYaml . | nindent 12 }}
+          {{- toYaml . | nindent 10 }}
         {{- end }}}
         securityContext:
           allowPrivilegeEscalation: false
