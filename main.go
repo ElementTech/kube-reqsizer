@@ -52,7 +52,7 @@ func init() {
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
-	var enableLabel bool
+	var enableAnnotation bool
 	var probeAddr string
 	var sampleSize int
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -61,7 +61,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&enableLabel, "annotation-filter", false,
+	flag.BoolVar(&enableAnnotation, "annotation-filter", false,
 		"Enable a annotation filter for pod scraping. "+
 			"Enabling this will ensure that the controller only sets requests of controllers of which pods have the annotation. "+
 			"(auto.request.operator/optimize=true)")
@@ -103,12 +103,12 @@ func main() {
 	}
 
 	if err = (&controllers.PodReconciler{
-		Client:      mgr.GetClient(),
-		Log:         ctrl.Log.WithName("controllers").WithName("Pod"),
-		Scheme:      mgr.GetScheme(),
-		ClientSet:   clientset,
-		SampleSize:  sampleSize,
-		EnableLabel: enableLabel,
+		Client:           mgr.GetClient(),
+		Log:              ctrl.Log.WithName("controllers").WithName("Pod"),
+		Scheme:           mgr.GetScheme(),
+		ClientSet:        clientset,
+		SampleSize:       sampleSize,
+		EnableAnnotation: enableAnnotation,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		log.Error(err, err.Error())
