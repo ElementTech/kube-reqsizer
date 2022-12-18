@@ -90,6 +90,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			SumPodRequest.Timestamp = time.Now()
 			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))
 			addToCache(cacheStore, SumPodRequest)
+			log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
 		} else {
 			if err != nil {
 				log.Error(err, err.Error())
