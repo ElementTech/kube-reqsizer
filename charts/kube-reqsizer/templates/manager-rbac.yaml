@@ -15,6 +15,16 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - "apps"
+  resources:
+  - "*"
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups: ["metrics.k8s.io"]
   resources: ["pods", "nodes"]
   verbs: ["get", "list", "watch"]  
