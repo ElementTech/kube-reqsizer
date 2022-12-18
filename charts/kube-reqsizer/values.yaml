@@ -1,5 +1,7 @@
 sampleSize: 1
+minSeconds: 1
 enabledAnnotation: false
+logLevel: info
 # Namespace annotation filter
 # Scale up / scale down requests
 # Timestamp per sample to restrict pod restarts

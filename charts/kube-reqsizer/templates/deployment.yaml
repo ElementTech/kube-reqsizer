@@ -24,7 +24,8 @@ spec:
         - --leader-elect
         - --annotation-filter={{.Values.enabledAnnotation}}
         - --sample-size={{.Values.sampleSize}}
-        - --zap-log-level=info
+        - --min-seconds={{.Values.minSeconds}}
+        - --zap-log-level={{.Values.logLevel}}
         command:
         - /manager
         env:
