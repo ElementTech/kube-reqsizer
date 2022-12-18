@@ -10,7 +10,7 @@ helm install \
 ```
 ## Description
 
-Kube-reqsizer has two primary custom flags:
+**kube-reqsizer** has three primary custom flags:
 
 ```
 --annotation-filter bool (default true)
