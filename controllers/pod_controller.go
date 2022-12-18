@@ -57,7 +57,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			// we'll ignore not-found errors, since they can't be fixed by an immediate
 			// requeue (we'll need to wait for a new notification), and we can get them
 			// on deleted requests.
-			return ctrl.Result{}, nil
+			return ctrl.Result{}, err
 		}
 		log.Error(err, "unable to fetch Pod")
 		return ctrl.Result{}, err
@@ -75,7 +75,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 		if err != nil {
 			log.Error(err, "failed to get stats from pod")
-			return ctrl.Result{}, nil
+			return ctrl.Result{}, err
 		}
 		PodUsageData := GeneratePodRequestsObjectFromRestData(data)
 
@@ -175,6 +175,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					replica, err := r.ClientSet.AppsV1().ReplicaSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
 					if err != nil {
 						log.Error(err, err.Error())
+						return ctrl.Result{}, err
 					}
 
 					ownerName = replica.OwnerReferences[0].Name
@@ -183,11 +184,13 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						deployment, err := r.ClientSet.AppsV1().Deployments(pod.Namespace).Get(ctx, ownerName, metav1.GetOptions{})
 						if err != nil {
 							log.Error(err, err.Error())
+							return ctrl.Result{}, err
 						}
 						UpdatePodController(deployment, Requests, ctx)
 						return r.UpdateKubeObject(deployment, ctx)
 					} else {
 						log.Info("Is Owned by Unknown CRD")
+						return ctrl.Result{}, nil
 					}
 				case "DaemonSet":
 					log.Info("Is Owned by DaemonSet")
@@ -196,6 +199,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, ownerName, metav1.GetOptions{})
 					if err != nil {
 						log.Error(err, err.Error())
+						return ctrl.Result{}, err
 					}
 					UpdatePodController(deployment, Requests, ctx)
 					return r.UpdateKubeObject(deployment, ctx)
@@ -206,6 +210,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, ownerName, metav1.GetOptions{})
 					if err != nil {
 						log.Error(err, err.Error())
+						return ctrl.Result{}, err
 					}
 
 					UpdatePodController(deployment, Requests, ctx)
@@ -222,5 +227,5 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 }
