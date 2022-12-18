@@ -64,7 +64,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&enableAnnotation, "annotation-filter", false,
+	flag.BoolVar(&enableAnnotation, "annotation-filter", true,
 		"Enable a annotation filter for pod scraping. "+
 			"Enabling this will ensure that the controller only sets requests of controllers of which PODS or NAMESPACE have the annotation. "+
 			"(auto.request.operator/optimize=true)")

@@ -8,11 +8,12 @@
 Kube-reqsizer has two primary custom flags:
 
 ```
---annotation-filter bool
+--annotation-filter bool (default true)
     
     Enable a annotation filter for pod scraping. 
     Enabling this will ensure that the controller 
     only sets requests of controllers of which PODS or NAMESPACE have the annotation. 
+    If false, will work on all pods in the cluster.
 
     auto.request.operator/optimize=true
 
