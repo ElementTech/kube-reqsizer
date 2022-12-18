@@ -41,7 +41,7 @@ func cacheKeyFunc(obj interface{}) (string, error) {
 	return obj.(PodRequests).Name, nil
 }
 
-var cacheStore = cache.NewStore(cacheKeyFunc)
+var cacheStore = cache.NewTTLStore(cacheKeyFunc, 48*time.Hour)
 
 // Reconcile handles a reconciliation request for a Pod.
 // If the Pod has the podHasAnnotation annotation, then Reconcile
