@@ -41,7 +41,7 @@ func (r *PodReconciler) UpdateKubeObject(pod client.Object, ctx context.Context)
 		if apierrors.IsNotFound(err) {
 			// The Pod has been deleted since we read it.
 			// Requeue the Pod to try to reconciliate again.
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{Requeue: false}, nil
 		}
 		log.Error(err, "unable to update pod")
 		return ctrl.Result{}, err
