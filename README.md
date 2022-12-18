@@ -8,6 +8,15 @@
 helm install \
     https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.4.0/kube-reqsizer-0.4.0.tgz
 ```
+
+**Core Values:**
+
+```yaml
+sampleSize: 1
+minSeconds: 1
+enabledAnnotation: true
+logLevel: info
+```
 ## Description
 
 **kube-reqsizer** has three primary custom flags:
