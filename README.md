@@ -8,7 +8,7 @@
 
 ```bash
 helm install \
-    https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.6.1/kube-reqsizer-0.6.1.tgz
+    https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.6.2/kube-reqsizer-0.6.2.tgz
 ```
 
 **Core Values:**
