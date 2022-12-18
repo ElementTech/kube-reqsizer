@@ -2,7 +2,12 @@
 ![alt text](/assets/example.png)
 
 **kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and reduce their requests based on the average usage.
+## Deploy - Helm
 
+```bash
+helm install \
+    https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.4.0/kube-reqsizer-0.4.0.tgz
+```
 ## Description
 
 Kube-reqsizer has two primary custom flags:
@@ -32,11 +37,7 @@ Disclaimer:
 
 `sample-size` is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size. If `min-seconds` has not yet passed since the pod has last been supposed to be sample-reconciled, the controller will keep sampling the pod until `min-seconds` have been reached and only then zero the sample and restart from cache.
 
-## Deploy - Helm
 
-```bash
-helm install https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.4.0/kube-reqsizer-0.4.0.tgz
-```
 # Development
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
