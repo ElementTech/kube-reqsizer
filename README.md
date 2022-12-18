@@ -43,14 +43,6 @@ You’ll need a Kubernetes cluster to run against. You can use [KIND](https://si
 
 ### Running on the cluster
 
-
-
-~~1. Install Instances of Custom Resources:~~ _this controller does not use CRDs_
-
-```sh
-kubectl apply -f config/samples/
-```
-
 1. Build and push your image to the location specified by `IMG`:
 	
 ```sh
@@ -62,14 +54,6 @@ make docker-build docker-push IMG=<some-registry>/kube-reqsizer:tag
 ```sh
 make deploy IMG=<some-registry>/kube-reqsizer:tag
 ```
-
-### Uninstall CRDs
-To delete the CRDs from the cluster:
-
-```sh
-make uninstall
-```
-
 ### Undeploy controller
 UnDeploy the controller to the cluster:
 
@@ -124,4 +108,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
