@@ -1,4 +1,6 @@
 # kube-reqsizer
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/explorium-ai/kube-reqsizer)](https://img.shields.io/github/v/release/explorium-ai/kube-reqsizer)
+<!-- [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kube-reqsizer)](https://artifacthub.io/packages/search?repo=kube-reqsizer) -->
 ![alt text](/assets/example.png)
 
 **kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/improve) their requests based on the average usage.
