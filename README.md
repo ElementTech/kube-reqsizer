@@ -23,7 +23,7 @@ Kube-reqsizer has two primary custom flags:
 --min-seconds int (default 1)
 
     Minimum seconds between pod restart.
-	This ensures the controller will not restart a pod if the minimum time
+    This ensures the controller will not restart a pod if the minimum time
     has not passed since it has started sampling it.
 ```
 
