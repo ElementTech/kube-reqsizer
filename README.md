@@ -7,8 +7,9 @@
 ## Deploy - Helm
 
 ```bash
-helm install \
-    https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.6.2/kube-reqsizer-0.6.2.tgz
+helm repo add kube-reqsizer https://jatalocks.github.io/kube-reqsizer/
+helm repo update
+helm install kube-reqsizer/kube-reqsizer
 ```
 
 **Core Values:**
