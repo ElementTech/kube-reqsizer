@@ -26,6 +26,8 @@ spec:
         - --sample-size={{.Values.sampleSize}}
         - --min-seconds={{.Values.minSeconds}}
         - --zap-log-level={{.Values.logLevel}}
+        resources:
+          {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
         command:
         - /manager
         env:
@@ -46,10 +48,6 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        {{- with .Values.controllerManager.manager.resources }}
-        resources:
-          {{- toYaml . | nindent 10 }}
-        {{- end }}}
         securityContext:
           allowPrivilegeEscalation: false
       # - args:
