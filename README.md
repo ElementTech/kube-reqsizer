@@ -1,7 +1,7 @@
 # kube-reqsizer
 ![alt text](/assets/example.png)
 
-**kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and reduce their requests based on the average usage.
+**kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/improve) their requests based on the average usage.
 ## Deploy - Helm
 
 ```bash
