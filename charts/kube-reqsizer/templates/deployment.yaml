@@ -46,7 +46,10 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources: {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
+        {{- with .Values.controllerManager.manager.resources }}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}}
         securityContext:
           allowPrivilegeEscalation: false
       # - args:
