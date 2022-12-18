@@ -37,6 +37,10 @@ Disclaimer:
 
 `sample-size` is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size. If `min-seconds` has not yet passed since the pod has last been supposed to be sample-reconciled, the controller will keep sampling the pod until `min-seconds` have been reached and only then zero the sample and restart from cache.
 
+## Limitations
+
+- Does not work with CRD controllers (such as Argo Rollouts)
+- Does not have persistent cache. Will reset cache on controller restart
 
 # Development
 ## Getting Started
