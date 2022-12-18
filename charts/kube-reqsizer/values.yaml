@@ -1,6 +1,6 @@
 sampleSize: 1
 minSeconds: 1
-enabledAnnotation: false
+enabledAnnotation: true
 logLevel: info
 # Namespace annotation filter
 # Scale up / scale down requests

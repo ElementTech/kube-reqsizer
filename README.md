@@ -35,7 +35,7 @@ Disclaimer:
 ## Deploy - Helm
 
 ```bash
-helm install https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.3.0/kube-reqsizer-0.3.0.tgz
+helm install https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.4.0/kube-reqsizer-0.4.0.tgz
 ```
 # Development
 ## Getting Started
