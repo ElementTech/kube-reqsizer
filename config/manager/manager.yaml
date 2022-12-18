@@ -48,8 +48,8 @@ spec:
         resources:
           limits:
             cpu: 1
-            memory: 1Gi
+            memory: 5Gi
           requests:
-            cpu: 100m
-            memory: 20Mi
+            cpu: 500m
+            memory: 100Mi
       terminationGracePeriodSeconds: 10
