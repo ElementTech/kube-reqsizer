@@ -92,12 +92,16 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		LatestPodRequest, err := fetchFromCache(cacheStore, pod.Name)
 		if err != nil {
 			SumPodRequest.Sample = 0
+			SumPodRequest.TimeSinceFirstSample = 0
+			SumPodRequest.Timestamp = time.Now()
 			addToCache(cacheStore, SumPodRequest)
 		} else {
 			if err != nil {
 				log.Error(err, err.Error())
 			} else {
 				SumPodRequest.Sample = LatestPodRequest.Sample + 1
+				SumPodRequest.TimeSinceFirstSample = int(time.Since(LatestPodRequest.Timestamp).Seconds())
+				SumPodRequest.Timestamp = time.Now()
 				for _, sumC := range SumPodRequest.ContainerRequests {
 					for _, latestC := range LatestPodRequest.ContainerRequests {
 						if latestC.Name == sumC.Name {
@@ -118,7 +122,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 		}
 
-		if SumPodRequest.Sample == r.SampleSize {
+		if (SumPodRequest.Sample >= r.SampleSize) && (SumPodRequest.TimeSinceFirstSample >= r.MinSecondsBetweenPodRestart) {
 			PodChange := false
 			Requests := []NewContainerRequests{}
 			log.Info(fmt.Sprint(SumPodRequest))
@@ -133,18 +137,18 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 								log.Info(c.Name)
 								log.Info(fmt.Sprint("Comparing CPU: ", fmt.Sprintf("%dm", AverageUsageCPU), " < ", fmt.Sprintf("%dm", currentC.CPU)))
 								log.Info(fmt.Sprint("Comparing Memory: ", fmt.Sprintf("%dMi", AverageUsageMemory), " < ", fmt.Sprintf("%dMi", currentC.Memory)))
-								if AverageUsageCPU < currentC.CPU {
-									if AverageUsageCPU > 0 {
-										pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageCPU))
-										PodChange = true
-									}
+								// if AverageUsageCPU < currentC.CPU {
+								if AverageUsageCPU > 0 {
+									pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageCPU))
+									PodChange = true
 								}
-								if AverageUsageMemory < currentC.Memory {
-									if AverageUsageMemory > 0 {
-										pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", AverageUsageMemory))
-										PodChange = true
-									}
+								// }
+								// if AverageUsageMemory < currentC.Memory {
+								if AverageUsageMemory > 0 {
+									pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", AverageUsageMemory))
+									PodChange = true
 								}
+								// }
 								Requests = append(Requests, NewContainerRequests{Name: c.Name, Requests: pod.Spec.Containers[i].Resources})
 							}
 						}

@@ -14,17 +14,20 @@ import (
 // PodReconciler reconciles a Pod object
 type PodReconciler struct {
 	client.Client
-	Log              logr.Logger
-	Scheme           *runtime.Scheme
-	ClientSet        *kubernetes.Clientset
-	SampleSize       int
-	EnableAnnotation bool
+	Log                         logr.Logger
+	Scheme                      *runtime.Scheme
+	ClientSet                   *kubernetes.Clientset
+	SampleSize                  int
+	EnableAnnotation            bool
+	MinSecondsBetweenPodRestart int
 }
 
 type PodRequests struct {
-	Name              string
-	ContainerRequests []ContainerRequests
-	Sample            int
+	Name                 string
+	ContainerRequests    []ContainerRequests
+	Sample               int
+	TimeSinceFirstSample int
+	Timestamp            time.Time
 }
 
 type ContainerRequests struct {

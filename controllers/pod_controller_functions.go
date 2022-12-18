@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/labstack/gommon/log"
@@ -119,7 +120,7 @@ func GetPodRequests(pod corev1.Pod) PodRequests {
 		}
 		containerData = append(containerData, ContainerRequests{Name: c.Name, CPU: int64(nanoCores), Memory: int64(miMemory)})
 	}
-	return PodRequests{pod.Name, containerData, 0}
+	return PodRequests{pod.Name, containerData, 0, 0, time.Now()}
 }
 
 func addToCache(cacheStore cache.Store, object PodRequests) error {
@@ -159,5 +160,5 @@ func GeneratePodRequestsObjectFromRestData(restData []byte) PodRequests {
 		kiMemory, _ := strconv.Atoi(strings.ReplaceAll(c.Usage.Memory, "Ki", ""))
 		containerData = append(containerData, ContainerRequests{Name: c.Name, CPU: int64(nanoCores / 1000000), Memory: int64(kiMemory / 1000)})
 	}
-	return PodRequests{data.Metadata.Name, containerData, 0}
+	return PodRequests{data.Metadata.Name, containerData, 0, 0, time.Now()}
 }

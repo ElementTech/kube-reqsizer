@@ -55,9 +55,12 @@ func main() {
 	var enableAnnotation bool
 	var probeAddr string
 	var sampleSize int
+	var minSecondsBetweenPodRestart int
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.IntVar(&sampleSize, "sample-size", 1, "The sample size to create an average from when reconciling.")
+	flag.IntVar(&sampleSize, "min-seconds", 1, "Minimum seconds between pod restart. "+
+		"This ensures the controller will not restart a pod if the minimum time has not passed since it has started sampling it.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -103,12 +106,13 @@ func main() {
 	}
 
 	if err = (&controllers.PodReconciler{
-		Client:           mgr.GetClient(),
-		Log:              ctrl.Log.WithName("controllers").WithName("Pod"),
-		Scheme:           mgr.GetScheme(),
-		ClientSet:        clientset,
-		SampleSize:       sampleSize,
-		EnableAnnotation: enableAnnotation,
+		Client:                      mgr.GetClient(),
+		Log:                         ctrl.Log.WithName("controllers").WithName("Pod"),
+		Scheme:                      mgr.GetScheme(),
+		ClientSet:                   clientset,
+		SampleSize:                  sampleSize,
+		EnableAnnotation:            enableAnnotation,
+		MinSecondsBetweenPodRestart: minSecondsBetweenPodRestart,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		log.Error(err, err.Error())
