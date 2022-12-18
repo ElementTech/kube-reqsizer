@@ -4,10 +4,6 @@ enabledAnnotation: true
 logLevel: info
 
 controllerManager:
-  kubeRbacProxy:
-    image:
-      repository: gcr.io/kubebuilder/kube-rbac-proxy
-      tag: v0.5.0
   manager:
     image:
       repository: jatalocks333/kube-reqsizer
