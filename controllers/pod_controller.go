@@ -35,15 +35,13 @@ import (
 
 const (
 	operatorAnnotation = "auto.request.operator/optimize"
-	// cacheKeyFunc defines the key function required in TTLStore.
-	cacheTTL = 60 * time.Second
 )
 
 func cacheKeyFunc(obj interface{}) (string, error) {
 	return obj.(PodRequests).Name, nil
 }
 
-var cacheStore = cache.NewTTLStore(cacheKeyFunc, cacheTTL)
+var cacheStore = cache.NewStore(cacheKeyFunc)
 
 // Reconcile handles a reconciliation request for a Pod.
 // If the Pod has the podHasAnnotation annotation, then Reconcile
@@ -75,7 +73,6 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 
 	if (!r.EnableAnnotation) || (r.EnableAnnotation && annotation) {
-		log.Info("Checking Pod: " + pod.Name + " in namespace " + pod.Namespace)
 
 		data, err := r.ClientSet.RESTClient().Get().AbsPath(fmt.Sprintf("apis/metrics.k8s.io/v1beta1/namespaces/%v/pods/%v", pod.Namespace, pod.Name)).DoRaw(ctx)
 
@@ -94,14 +91,18 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			SumPodRequest.Sample = 0
 			SumPodRequest.TimeSinceFirstSample = 0
 			SumPodRequest.Timestamp = time.Now()
+			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))
 			addToCache(cacheStore, SumPodRequest)
 		} else {
 			if err != nil {
 				log.Error(err, err.Error())
 			} else {
 				SumPodRequest.Sample = LatestPodRequest.Sample + 1
-				SumPodRequest.TimeSinceFirstSample = int(time.Since(LatestPodRequest.Timestamp).Seconds())
+				log.Info(fmt.Sprint(time.Now(), LatestPodRequest.Timestamp))
+				SumPodRequest.TimeSinceFirstSample = time.Since(LatestPodRequest.Timestamp).Seconds()
 				SumPodRequest.Timestamp = time.Now()
+				log.Info(fmt.Sprint("Updating cache sample ", SumPodRequest.Sample))
+
 				for _, sumC := range SumPodRequest.ContainerRequests {
 					for _, latestC := range LatestPodRequest.ContainerRequests {
 						if latestC.Name == sumC.Name {
@@ -111,6 +112,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						}
 					}
 				}
+
 				err := deleteFromCache(cacheStore, LatestPodRequest)
 				if err != nil {
 					log.Error(err, err.Error())
@@ -121,11 +123,12 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				}
 			}
 		}
-
+		log.Info(fmt.Sprint(SumPodRequest))
+		log.Info(fmt.Sprint(SumPodRequest.TimeSinceFirstSample, ">", r.MinSecondsBetweenPodRestart))
 		if (SumPodRequest.Sample >= r.SampleSize) && (SumPodRequest.TimeSinceFirstSample >= r.MinSecondsBetweenPodRestart) {
+			log.Info("Sample Size and Minimum Time have been reached")
 			PodChange := false
 			Requests := []NewContainerRequests{}
-			log.Info(fmt.Sprint(SumPodRequest))
 			for _, c := range SumPodRequest.ContainerRequests {
 				AverageUsageCPU := c.CPU / int64(SumPodRequest.Sample)
 				AverageUsageMemory := c.Memory / int64(SumPodRequest.Sample)
@@ -135,18 +138,22 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						for i, v := range pod.Spec.Containers {
 							if v.Name == c.Name {
 								log.Info(c.Name)
-								log.Info(fmt.Sprint("Comparing CPU: ", fmt.Sprintf("%dm", AverageUsageCPU), " < ", fmt.Sprintf("%dm", currentC.CPU)))
-								log.Info(fmt.Sprint("Comparing Memory: ", fmt.Sprintf("%dMi", AverageUsageMemory), " < ", fmt.Sprintf("%dMi", currentC.Memory)))
+								log.Info(fmt.Sprint("Comparing CPU: ", fmt.Sprintf("%dm", AverageUsageCPU), " <> ", fmt.Sprintf("%dm", currentC.CPU)))
+								log.Info(fmt.Sprint("Comparing Memory: ", fmt.Sprintf("%dMi", AverageUsageMemory), " <> ", fmt.Sprintf("%dMi", currentC.Memory)))
 								// if AverageUsageCPU < currentC.CPU {
 								if AverageUsageCPU > 0 {
-									pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageCPU))
-									PodChange = true
+									if pod.Spec.Containers[i].Resources.Requests != nil {
+										pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageCPU))
+										PodChange = true
+									}
 								}
 								// }
 								// if AverageUsageMemory < currentC.Memory {
 								if AverageUsageMemory > 0 {
-									pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", AverageUsageMemory))
-									PodChange = true
+									if pod.Spec.Containers[i].Resources.Requests != nil {
+										pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", AverageUsageMemory))
+										PodChange = true
+									}
 								}
 								// }
 								Requests = append(Requests, NewContainerRequests{Name: c.Name, Requests: pod.Spec.Containers[i].Resources})

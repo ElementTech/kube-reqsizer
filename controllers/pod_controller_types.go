@@ -19,14 +19,14 @@ type PodReconciler struct {
 	ClientSet                   *kubernetes.Clientset
 	SampleSize                  int
 	EnableAnnotation            bool
-	MinSecondsBetweenPodRestart int
+	MinSecondsBetweenPodRestart float64
 }
 
 type PodRequests struct {
 	Name                 string
 	ContainerRequests    []ContainerRequests
 	Sample               int
-	TimeSinceFirstSample int
+	TimeSinceFirstSample float64
 	Timestamp            time.Time
 }
 
