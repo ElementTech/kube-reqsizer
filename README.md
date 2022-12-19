@@ -3,7 +3,7 @@
 <!-- [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kube-reqsizer)](https://artifacthub.io/packages/search?repo=kube-reqsizer) -->
 ![alt text](/assets/example.png)
 
-**kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/improve) their requests based on the average usage.
+**kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/increase) their requests based on the average usage.
 ## Deploy - Helm
 
 ```bash
