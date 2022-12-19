@@ -42,8 +42,8 @@ logLevel: info
     have the annotation set to "true".
     If "false", will ignore annotations and work on all pods in the cluster.
 
-    # auto.request.operator/optimize=true
-    # auto.request.operator/optimize=false
+    # reqsizer.jatalocks.github.io/optimize=true
+    # reqsizer.jatalocks.github.io/optimize=false
 
 --sample-size int (default 1)
 
@@ -77,15 +77,15 @@ logLevel: info
 ### Annotations 
 *If **annotation-filter** is **true**:*
 ```
-auto.request.operator/optimize=true  # Optimize Pod/Namespace
-auto.request.operator/optimize=false # Ignore Pod/Namespace
+reqsizer.jatalocks.github.io/optimize=true  # Optimize Pod/Namespace
+reqsizer.jatalocks.github.io/optimize=false # Ignore Pod/Namespace
 ```
 These are available POD/Namespace annotations *Regardless of **annotation-filter**:*
 ```
-auto.request.operator/optimize=false # Ignore Pod/Namespace when optimizing entire cluster
-auto.request.operator/mode=average   # Default Mode. Optimizes based on average. If ommited, mode is average
-auto.request.operator/mode=max       # Sets the request to the MAXIMUM of all sample points
-auto.request.operator/mode=min       # Sets the request to the MINIMUM of all sample points
+reqsizer.jatalocks.github.io/optimize=false # Ignore Pod/Namespace when optimizing entire cluster
+reqsizer.jatalocks.github.io/mode=average   # Default Mode. Optimizes based on average. If ommited, mode is average
+reqsizer.jatalocks.github.io/mode=max       # Sets the request to the MAXIMUM of all sample points
+reqsizer.jatalocks.github.io/mode=min       # Sets the request to the MINIMUM of all sample points
 ```
 ### Disclaimer
 

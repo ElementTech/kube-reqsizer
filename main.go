@@ -81,7 +81,7 @@ func main() {
 	flag.BoolVar(&enableAnnotation, "annotation-filter", true,
 		"Enable a annotation filter for pod scraping. "+
 			"Enabling this will ensure that the controller only sets requests of controllers of which PODS or NAMESPACE have the annotation. "+
-			"(auto.request.operator/optimize=true)")
+			"(reqsizer.jatalocks.github.io/optimize=true)")
 	opts := zap.Options{
 		Development: true,
 	}

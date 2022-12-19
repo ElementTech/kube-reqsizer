@@ -35,8 +35,8 @@ import (
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;update;patch
 
 const (
-	operatorAnnotation     = "auto.request.operator/optimize"
-	operatorModeAnnotation = "auto.request.operator/mode"
+	operatorAnnotation     = "reqsizer.jatalocks.github.io/optimize"
+	operatorModeAnnotation = "reqsizer.jatalocks.github.io/mode"
 )
 
 func cacheKeyFunc(obj interface{}) (string, error) {
@@ -205,7 +205,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				}
 			}
 			if PodChange {
-				pod.Annotations["auto.request.operator/changed"] = "true"
+				pod.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 				log.Info("Pod Requests Will Change")
 
 				if len(pod.OwnerReferences) == 0 {
@@ -231,7 +231,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 							return ctrl.Result{}, err
 						}
 						UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
-						deployment.Annotations["auto.request.operator/changed"] = "true"
+						deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 
 						return r.UpdateKubeObject(deployment, ctx)
 					} else {
@@ -248,7 +248,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						return ctrl.Result{}, err
 					}
 					UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
-					deployment.Annotations["auto.request.operator/changed"] = "true"
+					deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 					return r.UpdateKubeObject(deployment, ctx)
 				case "StatefulSet":
 					log.Info("Is Owned by StatefulSet")
@@ -261,7 +261,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					}
 
 					UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
-					deployment.Annotations["auto.request.operator/changed"] = "true"
+					deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 					return r.UpdateKubeObject(deployment, ctx)
 				default:
 					fmt.Printf("Could not find resource manager for type %s\n", pod.OwnerReferences[0].Kind)

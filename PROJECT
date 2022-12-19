@@ -1,4 +1,4 @@
-domain: auto.request.operator
+domain: reqsizer.jatalocks.github.io
 layout:
 - go.kubebuilder.io/v3
 projectName: kube-reqsizer
