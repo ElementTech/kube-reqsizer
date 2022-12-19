@@ -37,9 +37,13 @@ type PodRequests struct {
 }
 
 type ContainerRequests struct {
-	Name   string
-	CPU    int64 // Nanocores
-	Memory int64 // Mi
+	Name      string
+	CPU       int64 // Nanocores
+	MaxCPU    int64
+	MinCPU    int64
+	Memory    int64 // Mi
+	MaxMemory int64
+	MinMemory int64
 }
 
 type NewContainerRequests struct {

@@ -35,10 +35,12 @@ logLevel: info
     
     Enable a annotation filter for pod scraping. 
     Enabling this will ensure that the controller 
-    only sets requests of controllers of which PODS or NAMESPACE have the annotation. 
-    If false, will work on all pods in the cluster.
+    only sets requests of controllers of which PODS or NAMESPACE 
+    have the annotation set to "true".
+    If "false", will ignore annotations and work on all pods in the cluster.
 
     # auto.request.operator/optimize=true
+    # auto.request.operator/optimize=false
 
 --sample-size int (default 1)
 
@@ -69,10 +71,22 @@ logLevel: info
     Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite
 ```
 
-Disclaimer: 
+### Annotations 
+*If **annotation-filter** is **true**:*
+```
+auto.request.operator/optimize=true  # Optimize Pod/Namespace
+auto.request.operator/optimize=false # Ignore Pod/Namespace
+```
+These are available POD/Namespace annotations *Regardless of **annotation-filter**:*
+```
+auto.request.operator/optimize=false # Ignore Pod/Namespace when optimizing entire cluster
+auto.request.operator/mode=average   # Default Mode. Optimizes based on average. If ommited, mode is average
+auto.request.operator/mode=max       # Sets the request to the MAXIMUM of all sample points
+auto.request.operator/mode=min       # Sets the request to the MINIMUM of all sample points
+```
+### Disclaimer
 
 `sample-size` is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size. If `min-seconds` has not yet passed since the pod has last been supposed to be sample-reconciled, the controller will keep sampling the pod until `min-seconds` have been reached and only then zero the sample and restart from cache.
-
 ## Limitations
 
 - Does not work with CRD controllers (such as Argo Rollouts)

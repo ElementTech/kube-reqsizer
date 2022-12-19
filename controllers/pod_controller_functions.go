@@ -30,6 +30,39 @@ func (r *PodReconciler) NamespaceOrPodHaveAnnotation(pod corev1.Pod, ctx context
 	return (podHasAnnotation || namespaceHasAnnotation), nil
 }
 
+func (r *PodReconciler) NamespaceOrPodHaveIgnoreAnnotation(pod corev1.Pod, ctx context.Context) (bool, error) {
+	podHasIgnoreAnnotation := pod.Annotations[operatorAnnotation] == "false"
+	namespace, err := r.ClientSet.CoreV1().Namespaces().Get(ctx, pod.Namespace, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	namespaceHasIgnoreAnnotation := namespace.Annotations[operatorAnnotation] == "false"
+	return (namespaceHasIgnoreAnnotation) && (podHasIgnoreAnnotation), nil
+}
+
+func (r *PodReconciler) GetPodMode(pod corev1.Pod, ctx context.Context) string {
+	podHasAverage := pod.Annotations[operatorModeAnnotation] == "average"
+	podHasMin := pod.Annotations[operatorModeAnnotation] == "min"
+	podHasMax := pod.Annotations[operatorModeAnnotation] == "max"
+	namespace, err := r.ClientSet.CoreV1().Namespaces().Get(ctx, pod.Namespace, metav1.GetOptions{})
+	if err != nil {
+		return "average"
+	}
+	namespaceHasAverage := namespace.Annotations[operatorModeAnnotation] == "average"
+	namespaceHasMin := namespace.Annotations[operatorModeAnnotation] == "min"
+	namespaceHasMax := namespace.Annotations[operatorModeAnnotation] == "max"
+	if podHasAverage || namespaceHasAverage {
+		return "average"
+	}
+	if (podHasMax || namespaceHasMax) && !(podHasMin || namespaceHasMin) {
+		return "max"
+	}
+	if (podHasMin || namespaceHasMin) && !(podHasMax || namespaceHasMax) {
+		return "max"
+	}
+	return "average"
+}
+
 func (r *PodReconciler) UpdateKubeObject(pod client.Object, ctx context.Context) (ctrl.Result, error) {
 	if err := r.Update(ctx, pod); err != nil {
 		if apierrors.IsConflict(err) {

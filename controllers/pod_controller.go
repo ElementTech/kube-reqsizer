@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +35,8 @@ import (
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;update;patch
 
 const (
-	operatorAnnotation = "auto.request.operator/optimize"
+	operatorAnnotation     = "auto.request.operator/optimize"
+	operatorModeAnnotation = "auto.request.operator/mode"
 )
 
 func cacheKeyFunc(obj interface{}) (string, error) {
@@ -68,8 +70,13 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		log.Error(err, "failed to get annotations")
 		return ctrl.Result{}, err
 	}
+	ignoreAnnotation, err := r.NamespaceOrPodHaveIgnoreAnnotation(pod, ctx)
+	if err != nil {
+		log.Error(err, "failed to get annotations")
+		return ctrl.Result{}, err
+	}
 
-	if (!r.EnableAnnotation) || (r.EnableAnnotation && annotation) {
+	if (!r.EnableAnnotation && !ignoreAnnotation) || (r.EnableAnnotation && annotation && !ignoreAnnotation) {
 
 		data, err := r.ClientSet.RESTClient().Get().AbsPath(fmt.Sprintf("apis/metrics.k8s.io/v1beta1/namespaces/%v/pods/%v", pod.Namespace, pod.Name)).DoRaw(ctx)
 
@@ -105,6 +112,10 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					for _, latestC := range LatestPodRequest.ContainerRequests {
 						if latestC.Name == sumC.Name {
 							sumCAddr := &sumC
+							sumCAddr.MaxCPU = int64(math.Max(float64(sumCAddr.MaxCPU), float64(latestC.CPU)))
+							sumCAddr.MaxMemory = int64(math.Max(float64(sumCAddr.MaxMemory), float64(latestC.Memory)))
+							sumCAddr.MinCPU = int64(math.Min(float64(sumCAddr.MinCPU), float64(latestC.CPU)))
+							sumCAddr.MinMemory = int64(math.Min(float64(sumCAddr.MinMemory), float64(latestC.Memory)))
 							sumCAddr.CPU += latestC.CPU
 							sumCAddr.Memory += latestC.Memory
 						}
@@ -140,7 +151,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 								// if AverageUsageCPU < currentC.CPU {
 								if r.ValidateCPU(currentC.CPU, AverageUsageCPU) {
 									if pod.Spec.Containers[i].Resources.Requests != nil {
-										pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageCPU))
+										switch r.GetPodMode(pod, ctx) {
+										case "average":
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageCPU))
+										case "min":
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", c.MinCPU))
+										case "max":
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", c.MaxCPU))
+										}
 										PodChange = true
 									}
 								}
@@ -148,7 +166,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 								if r.ValidateMemory(currentC.Memory, AverageUsageMemory) {
 									if AverageUsageMemory > 0 {
 										if pod.Spec.Containers[i].Resources.Requests != nil {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", AverageUsageMemory))
+											switch r.GetPodMode(pod, ctx) {
+											case "average":
+												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageMemory))
+											case "min":
+												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", c.MinMemory))
+											case "max":
+												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", c.MaxMemory))
+											}
 											PodChange = true
 										}
 									}
