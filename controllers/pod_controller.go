@@ -116,14 +116,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 								sumCAddr.MaxCPU = int64(math.Max(float64(sumCAddr.MaxCPU), float64(latestC.CPU)))
 								sumCAddr.MinCPU = int64(math.Min(float64(sumCAddr.MinCPU), float64(latestC.CPU)))
 							} else {
-								sumCAddr.MaxCPU = latestC.CPU
+								// sumCAddr.MaxCPU = latestC.CPU
 								sumCAddr.MinCPU = 1
 							}
 							if latestC.Memory > 0 {
 								sumCAddr.MaxMemory = int64(math.Max(float64(sumCAddr.MaxMemory), float64(latestC.Memory)))
 								sumCAddr.MinMemory = int64(math.Min(float64(sumCAddr.MinMemory), float64(latestC.Memory)))
 							} else {
-								sumCAddr.MaxMemory = latestC.Memory
+								// sumCAddr.MaxMemory = latestC.Memory
 								sumCAddr.MinMemory = 1
 							}
 							sumCAddr.CPU += latestC.CPU

@@ -100,7 +100,7 @@ auto.request.operator/mode=min       # Sets the request to the MINIMUM of all sa
 1. One or more of the samples in a certain cycle reports `0` (less than 1):
    1. **mode=average**: Will take the `0` into consideration.
    2. **mode=min**: Will consider the `0` as `1`.
-   3. **mode=max**: Will take the `0` into consideration, but will ignore if *max=0*.
+   3. **mode=max**: Will ignore the sample.
 2. **annotation-filter** is `true` (`optimize=false` is as strong as **deny**):
    1. A namespace has `optimize=false` but a pod has `optimize=true`:
       1. The controller will ignore the pod and not reconcile.
