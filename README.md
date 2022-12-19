@@ -4,6 +4,8 @@
 ![alt text](/assets/example.png)
 
 **kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/increase) their requests based on the average usage.
+
+NOTE: This is an alternative to [Vertical-Pod-Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler). The intended use of this project is to provide a simpler, more straightforward install and mechanism, without CRDs, **and that can work with [Horizontal-Pod-Autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).**
 ## Deploy - Helm
 
 ```bash
