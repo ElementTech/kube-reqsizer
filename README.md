@@ -90,6 +90,23 @@ auto.request.operator/mode=min       # Sets the request to the MINIMUM of all sa
 ### Disclaimer
 
 `sample-size` is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size. If `min-seconds` has not yet passed since the pod has last been supposed to be sample-reconciled, the controller will keep sampling the pod until `min-seconds` have been reached and only then zero the sample and restart from cache.
+
+### Edge Cases
+
+1. All samples in a certain cycle report `0` (less than 1):
+   1. **mode=average**: The controller will ignore the pod and not reconcile.
+   2. **mode=min**: The controller will put `1m` or `1Mi` as a value.
+   3. **mode=max**: The controller will ignore the pod and not reconcile.
+1. One or more of the samples in a certain cycle reports `0` (less than 1):
+   1. **mode=average**: Will take the `0` into consideration.
+   2. **mode=min**: Will consider the `0` as `1`.
+   3. **mode=max**: Will take the `0` into consideration, but will ignore if *max=0*.
+2. Annotation is `true` (`optimize=false` is as strong as **deny**):
+   1. A namespace has `optimize=false` but a pod has `optimize=true`:
+      1. The controller will ignore the pod and not reconcile.
+   2. A namespace has `optimize=true` but a pod has `optimize=false`:
+      1. The controller will ignore the pod and not reconcile.
+
 ## Limitations
 
 - Does not work with CRD controllers (such as Argo Rollouts)
