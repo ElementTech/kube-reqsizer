@@ -20,6 +20,12 @@ type PodReconciler struct {
 	SampleSize                  int
 	EnableAnnotation            bool
 	MinSecondsBetweenPodRestart float64
+	EnableIncrease              bool
+	EnableReduce                bool
+	MaxMemory                   int64
+	MaxCPU                      int64
+	MinMemory                   int64
+	MinCPU                      int64
 }
 
 type PodRequests struct {

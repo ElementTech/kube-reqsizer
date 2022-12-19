@@ -17,14 +17,20 @@ helm install kube-reqsizer/kube-reqsizer
 ```yaml
 sampleSize: 1
 minSeconds: 1
+enableIncrease: true
+enableReduce: true
+maxMemory: 0
+minMemory: 0
+maxCPU: 0
+minCPU: 0
 enabledAnnotation: true
 logLevel: info
 ```
 ## Description
 
-**kube-reqsizer** has three primary custom flags:
+**kube-reqsizer** has primary custom flags:
 
-```
+```bash
 --annotation-filter bool (default true)
     
     Enable a annotation filter for pod scraping. 
@@ -43,6 +49,24 @@ logLevel: info
     Minimum seconds between pod restart.
     This ensures the controller will not restart a pod if the minimum time
     has not passed since it has started sampling it.
+
+--enable-increase (default true)
+    Enables the controller to increase pod requests
+
+--enable-reduce (default true)
+    Enables the controller to reduce pod requests
+
+--max-cpu int (default 0)
+    Maximum CPU in (m) that the controller can set a pod request to. 0 is infinite 
+
+--max-memory int (default 0)
+    Maximum memory in (Mi) that the controller can set a pod request to. 0 is infinite
+
+--min-cpu int (default 0)
+    Minimum CPU in (m) that the controller can set a pod request to. 0 is infinite
+
+--min-memory int (default 0)
+    Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite
 ```
 
 Disclaimer: 

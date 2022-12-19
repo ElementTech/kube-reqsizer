@@ -11,7 +11,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/labstack/gommon/log"
-	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,43 +48,15 @@ func (r *PodReconciler) UpdateKubeObject(pod client.Object, ctx context.Context)
 	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 }
 
-func UpdatePodController(deployment interface{}, Requests []NewContainerRequests, ctx context.Context) {
-
-	switch v := deployment.(type) {
-	case *v1.Deployment:
-		for _, podContainer := range Requests {
-			for i, depContainer := range v.Spec.Template.Spec.Containers {
-				if depContainer.Name == podContainer.Name {
-					log.Info(fmt.Sprint("Setting", podContainer.Requests))
-					v.Spec.Template.Spec.Containers[i].Resources = podContainer.Requests
-				}
+func UpdatePodController(podspec *corev1.PodSpec, Requests []NewContainerRequests, ctx context.Context) {
+	for _, podContainer := range Requests {
+		for i, depContainer := range podspec.Containers {
+			if depContainer.Name == podContainer.Name {
+				log.Info(fmt.Sprint("Setting", podContainer.Requests))
+				podspec.Containers[i].Resources = podContainer.Requests
 			}
 		}
-		v.Annotations["auto.request.operator/changed"] = "true"
-	case *v1.DaemonSet:
-		for _, podContainer := range Requests {
-			for i, depContainer := range v.Spec.Template.Spec.Containers {
-				if depContainer.Name == podContainer.Name {
-					log.Info(fmt.Sprint("Setting", podContainer.Requests))
-					v.Spec.Template.Spec.Containers[i].Resources = podContainer.Requests
-				}
-			}
-		}
-		v.Annotations["auto.request.operator/changed"] = "true"
-	case *v1.StatefulSet:
-		for _, podContainer := range Requests {
-			for i, depContainer := range v.Spec.Template.Spec.Containers {
-				if depContainer.Name == podContainer.Name {
-					log.Info(fmt.Sprint("Setting", podContainer.Requests))
-					v.Spec.Template.Spec.Containers[i].Resources = podContainer.Requests
-				}
-			}
-		}
-		v.Annotations["auto.request.operator/changed"] = "true"
-	default:
-		log.Debug("Unsupported type")
 	}
-
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -101,6 +72,45 @@ func RemoveLastChar(str string) string {
 	}
 	return str
 }
+
+func (r *PodReconciler) ValidateCPU(currentCPU, AverageUsageCPU int64) bool {
+	if AverageUsageCPU > 0 {
+		if AverageUsageCPU > currentCPU {
+			if r.EnableIncrease {
+				if (AverageUsageCPU <= r.MaxCPU) || (r.MaxCPU == 0) {
+					return true
+				}
+			}
+		} else {
+			if r.EnableReduce {
+				if (AverageUsageCPU >= r.MinCPU) || (r.MinCPU == 0) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (r *PodReconciler) ValidateMemory(currentMemory, AverageUsageMemory int64) bool {
+	if AverageUsageMemory > 0 {
+		if AverageUsageMemory > currentMemory {
+			if r.EnableIncrease {
+				if (AverageUsageMemory <= r.MaxMemory) || (r.MaxMemory == 0) {
+					return true
+				}
+			}
+		} else {
+			if r.EnableReduce {
+				if (AverageUsageMemory >= r.MinMemory) || (r.MinMemory == 0) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func GetPodRequests(pod corev1.Pod) PodRequests {
 	containerData := []ContainerRequests{}
 	for _, c := range pod.Spec.Containers {

@@ -122,7 +122,6 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 		}
 		log.Info(fmt.Sprint(SumPodRequest))
-		log.Info(fmt.Sprint(SumPodRequest.TimeSinceFirstSample, ">", r.MinSecondsBetweenPodRestart))
 		if (SumPodRequest.Sample >= r.SampleSize) && (SumPodRequest.TimeSinceFirstSample >= r.MinSecondsBetweenPodRestart) {
 			log.Info("Sample Size and Minimum Time have been reached")
 			PodChange := false
@@ -139,21 +138,21 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 								log.Info(fmt.Sprint("Comparing CPU: ", fmt.Sprintf("%dm", AverageUsageCPU), " <> ", fmt.Sprintf("%dm", currentC.CPU)))
 								log.Info(fmt.Sprint("Comparing Memory: ", fmt.Sprintf("%dMi", AverageUsageMemory), " <> ", fmt.Sprintf("%dMi", currentC.Memory)))
 								// if AverageUsageCPU < currentC.CPU {
-								if AverageUsageCPU > 0 {
+								if r.ValidateCPU(currentC.CPU, AverageUsageCPU) {
 									if pod.Spec.Containers[i].Resources.Requests != nil {
 										pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageCPU))
 										PodChange = true
 									}
 								}
 								// }
-								// if AverageUsageMemory < currentC.Memory {
-								if AverageUsageMemory > 0 {
-									if pod.Spec.Containers[i].Resources.Requests != nil {
-										pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", AverageUsageMemory))
-										PodChange = true
+								if r.ValidateMemory(currentC.Memory, AverageUsageMemory) {
+									if AverageUsageMemory > 0 {
+										if pod.Spec.Containers[i].Resources.Requests != nil {
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", AverageUsageMemory))
+											PodChange = true
+										}
 									}
 								}
-								// }
 								Requests = append(Requests, NewContainerRequests{Name: c.Name, Requests: pod.Spec.Containers[i].Resources})
 							}
 						}
@@ -170,7 +169,6 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				}
 
 				var ownerName string
-
 				switch pod.OwnerReferences[0].Kind {
 				case "ReplicaSet":
 					replica, err := r.ClientSet.AppsV1().ReplicaSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
@@ -187,7 +185,9 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 							log.Error(err, err.Error())
 							return ctrl.Result{}, err
 						}
-						UpdatePodController(deployment, Requests, ctx)
+						UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
+						deployment.Annotations["auto.request.operator/changed"] = "true"
+
 						return r.UpdateKubeObject(deployment, ctx)
 					} else {
 						log.Info("Is Owned by Unknown CRD")
@@ -202,7 +202,8 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						log.Error(err, err.Error())
 						return ctrl.Result{}, err
 					}
-					UpdatePodController(deployment, Requests, ctx)
+					UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
+					deployment.Annotations["auto.request.operator/changed"] = "true"
 					return r.UpdateKubeObject(deployment, ctx)
 				case "StatefulSet":
 					log.Info("Is Owned by StatefulSet")
@@ -214,7 +215,8 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						return ctrl.Result{}, err
 					}
 
-					UpdatePodController(deployment, Requests, ctx)
+					UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
+					deployment.Annotations["auto.request.operator/changed"] = "true"
 					return r.UpdateKubeObject(deployment, ctx)
 				default:
 					fmt.Printf("Could not find resource manager for type %s\n", pod.OwnerReferences[0].Kind)

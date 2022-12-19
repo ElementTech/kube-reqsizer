@@ -56,6 +56,20 @@ func main() {
 	var probeAddr string
 	var sampleSize int
 	var minSecondsBetweenPodRestart float64
+	var enableIncrease bool
+	var enableReduce bool
+	var maxMemory int64
+	var maxCPU int64
+	var minMemory int64
+	var minCPU int64
+
+	flag.BoolVar(&enableIncrease, "enable-increase", true, "Enables the controller to increase pod requests")
+	flag.BoolVar(&enableReduce, "enable-reduce", true, "Enables the controller to reduce pod requests")
+	flag.Int64Var(&maxMemory, "max-memory", 0, "Maximum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
+	flag.Int64Var(&maxCPU, "max-cpu", 0, "Maximum CPU in (m) that the controller can set a pod request to. 0 is infinite")
+	flag.Int64Var(&minMemory, "min-memory", 0, "Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
+	flag.Int64Var(&minCPU, "min-cpu", 0, "Minimum CPU in (m) that the controller can set a pod request to. 0 is infinite")
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.IntVar(&sampleSize, "sample-size", 1, "The sample size to create an average from when reconciling.")
@@ -112,6 +126,12 @@ func main() {
 		SampleSize:                  sampleSize,
 		EnableAnnotation:            enableAnnotation,
 		MinSecondsBetweenPodRestart: minSecondsBetweenPodRestart,
+		EnableIncrease:              enableIncrease,
+		EnableReduce:                enableReduce,
+		MaxMemory:                   maxMemory,
+		MaxCPU:                      maxCPU,
+		MinMemory:                   minMemory,
+		MinCPU:                      minCPU,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		log.Error(err, err.Error())

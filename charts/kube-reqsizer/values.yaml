@@ -1,5 +1,11 @@
 sampleSize: 1
 minSeconds: 1
+enableIncrease: true
+enableReduce: true
+maxMemory: 0
+minMemory: 0
+maxCPU: 0
+minCPU: 0
 enabledAnnotation: true
 logLevel: info
 

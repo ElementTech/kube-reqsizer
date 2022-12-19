@@ -26,6 +26,12 @@ spec:
         - --sample-size={{.Values.sampleSize}}
         - --min-seconds={{.Values.minSeconds}}
         - --zap-log-level={{.Values.logLevel}}
+        - --enable-increase={{.Values.enableIncrease}}
+        - --enable-reduce={{.Values.enableReduce}}
+        - --max-cpu={{.Values.maxCPU}}
+        - --max-memory={{.Values.maxMemory}}
+        - --min-cpu={{.Values.minCPU}}
+        - --min-memory={{.Values.minMemory}}
         resources:
           {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
         command:
@@ -33,7 +39,7 @@ spec:
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ .Values.kubernetesClusterDomain }}
-        image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag | default .Chart.AppVersion }}
+        image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag }}
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
