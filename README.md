@@ -26,6 +26,9 @@ minCPU: 0
 enabledAnnotation: true
 logLevel: info
 ```
+## Prerequisites
+- The metrics server must be deployed in your cluster. Read more about [Metrics Server](https://github.com/kubernetes-sigs/metrics-server). This controller uses the **metrics.k8s.io** extension API group (apis/metrics.k8s.io/v1beta1)
+
 ## Description
 
 **kube-reqsizer** has primary custom flags:
