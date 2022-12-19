@@ -37,7 +37,7 @@ func (r *PodReconciler) NamespaceOrPodHaveIgnoreAnnotation(pod corev1.Pod, ctx c
 		return false, err
 	}
 	namespaceHasIgnoreAnnotation := namespace.Annotations[operatorAnnotation] == "false"
-	return (namespaceHasIgnoreAnnotation) && (podHasIgnoreAnnotation), nil
+	return (namespaceHasIgnoreAnnotation) || (podHasIgnoreAnnotation), nil
 }
 
 func (r *PodReconciler) GetPodMode(pod corev1.Pod, ctx context.Context) string {
