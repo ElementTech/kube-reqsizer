@@ -18,6 +18,7 @@ import (
 	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 func (r *PodReconciler) NamespaceOrPodHaveAnnotation(pod corev1.Pod, ctx context.Context) (bool, error) {
@@ -95,6 +96,9 @@ func UpdatePodController(podspec *corev1.PodSpec, Requests []NewContainerRequest
 // SetupWithManager sets up the controller with the Manager.
 func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 4,
+		}).
 		For(&corev1.Pod{}).
 		Complete(r)
 }
