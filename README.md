@@ -38,7 +38,7 @@ logLevel: info
     only sets requests of controllers of which PODS or NAMESPACE have the annotation. 
     If false, will work on all pods in the cluster.
 
-    auto.request.operator/optimize=true
+    # auto.request.operator/optimize=true
 
 --sample-size int (default 1)
 
