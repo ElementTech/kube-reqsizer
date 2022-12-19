@@ -112,10 +112,20 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					for _, latestC := range LatestPodRequest.ContainerRequests {
 						if latestC.Name == sumC.Name {
 							sumCAddr := &sumC
-							sumCAddr.MaxCPU = int64(math.Max(float64(sumCAddr.MaxCPU), float64(latestC.CPU)))
-							sumCAddr.MaxMemory = int64(math.Max(float64(sumCAddr.MaxMemory), float64(latestC.Memory)))
-							sumCAddr.MinCPU = int64(math.Min(float64(sumCAddr.MinCPU), float64(latestC.CPU)))
-							sumCAddr.MinMemory = int64(math.Min(float64(sumCAddr.MinMemory), float64(latestC.Memory)))
+							if latestC.CPU > 0 {
+								sumCAddr.MaxCPU = int64(math.Max(float64(sumCAddr.MaxCPU), float64(latestC.CPU)))
+								sumCAddr.MinCPU = int64(math.Min(float64(sumCAddr.MinCPU), float64(latestC.CPU)))
+							} else {
+								sumCAddr.MaxCPU = latestC.CPU
+								sumCAddr.MinCPU = latestC.CPU
+							}
+							if latestC.Memory > 0 {
+								sumCAddr.MaxMemory = int64(math.Max(float64(sumCAddr.MaxMemory), float64(latestC.Memory)))
+								sumCAddr.MinMemory = int64(math.Min(float64(sumCAddr.MinMemory), float64(latestC.Memory)))
+							} else {
+								sumCAddr.MaxMemory = latestC.Memory
+								sumCAddr.MinMemory = latestC.Memory
+							}
 							sumCAddr.CPU += latestC.CPU
 							sumCAddr.Memory += latestC.Memory
 						}
