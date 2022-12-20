@@ -1,14 +1,23 @@
-# <img src="https://user-images.githubusercontent.com/87271817/208631618-0340279e-acf4-4101-bc0b-fac6badc136d.png" width="300">
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/87271817/208631618-0340279e-acf4-4101-bc0b-fac6badc136d.png" width="300">
+</p>
+<p align="center">A Kubernetes controller to optimize pod requests. A VPA Alternative.</p>
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/jatalocks/kube-reqsizer)](https://img.shields.io/github/v/release/jatalocks/kube-reqsizer)
+<p align="center">
+<a  target="_blank"><img src="https://img.shields.io/github/v/release/jatalocks/kube-reqsizer" /></a>
+<a  target="_blank"><img src="https://img.shields.io/github/downloads/jatalocks/kube-reqsizer/total"/></a>
+<a  target="_blank"><img src="https://img.shields.io/github/issues/jatalocks/kube-reqsizer"/></a>
+<a  target="_blank"><img src="https://img.shields.io/github/go-mod/go-version/jatalocks/kube-reqsizer"/></a>
+</p>
 
-![alt text](/assets/example.png)
 
 
 **kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/increase) their requests based on the average usage.
 
 When all required conditions meet, the controller calculates the result requirements based on all the samples taken so far a pod.
 It then goes "upstream" to the parent controller of that pod, for example *Deployment*, and updates the relevant containers for the pod inside the deployment as a reconciliation, as if its desired state is the new state with the new requirements.
+
+<img src="./assets/example.png" width="200">
 
 Note: This is an alternative to [Vertical-Pod-Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler). The intended use of this project is to provide a simpler, more straightforward install and mechanism, without CRDs, **and that can work with [Horizontal-Pod-Autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).**
 ## Deploy - Helm
