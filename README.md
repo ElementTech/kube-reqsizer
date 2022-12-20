@@ -56,7 +56,7 @@ logLevel: info
 
     The sample size to create an average from when reconciling.
 
---min-seconds int (default 1)
+--min-seconds float (default 1)
 
     Minimum seconds between pod restart.
     This ensures the controller will not restart a pod if the minimum time
