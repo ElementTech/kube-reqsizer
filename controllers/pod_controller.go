@@ -105,6 +105,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				SumPodRequest.Sample = LatestPodRequest.Sample + 1
 				if LatestPodRequest.Sample == 1 {
 					SumPodRequest.Timestamp = time.Now()
+					LatestPodRequest.Timestamp = SumPodRequest.Timestamp
 				}
 				log.Info(fmt.Sprint(time.Now(), LatestPodRequest.Timestamp))
 				SumPodRequest.TimeSinceFirstSample = time.Since(LatestPodRequest.Timestamp).Seconds()
