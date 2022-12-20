@@ -21,9 +21,9 @@ spec:
     metadata:
       labels:
         control-plane: controller-manager
-    spec:
       annotations:
-        reqsizer.jatalocks.github.io/optimize: 'false'
+        reqsizer.jatalocks.github.io/optimize: 'false'        
+    spec:
       securityContext:
         runAsUser: 65532
       containers:
