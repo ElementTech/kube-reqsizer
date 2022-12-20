@@ -103,9 +103,12 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				log.Error(err, err.Error())
 			} else {
 				SumPodRequest.Sample = LatestPodRequest.Sample + 1
+				if LatestPodRequest.Sample == 1 {
+					SumPodRequest.Timestamp = time.Now()
+				}
 				log.Info(fmt.Sprint(time.Now(), LatestPodRequest.Timestamp))
 				SumPodRequest.TimeSinceFirstSample = time.Since(LatestPodRequest.Timestamp).Seconds()
-				// SumPodRequest.Timestamp = time.Now()
+
 				log.Info(fmt.Sprint("Updating cache sample ", SumPodRequest.Sample))
 
 				for _, sumC := range SumPodRequest.ContainerRequests {
