@@ -70,8 +70,8 @@ func main() {
 	flag.BoolVar(&enableReduce, "enable-reduce", true, "Enables the controller to reduce pod requests")
 	flag.Int64Var(&maxMemory, "max-memory", 0, "Maximum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
 	flag.Int64Var(&maxCPU, "max-cpu", 0, "Maximum CPU in (m) that the controller can set a pod request to. 0 is infinite")
-	flag.Int64Var(&cpuFactor, "cpu-factor", 1, "A factor to multiply CPU requests when reconciling. 1 By default.")
-	flag.Int64Var(&memoryFactor, "memory-factor", 1, "A factor to multiply Memory requests when reconciling. 1 By default.")
+	flag.Float64Var(&cpuFactor, "cpu-factor", 1, "A factor to multiply CPU requests when reconciling. 1 By default.")
+	flag.Float64Var(&memoryFactor, "memory-factor", 1, "A factor to multiply Memory requests when reconciling. 1 By default.")
 
 	flag.Int64Var(&minMemory, "min-memory", 0, "Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
 	flag.Int64Var(&minCPU, "min-cpu", 0, "Minimum CPU in (m) that the controller can set a pod request to. 0 is infinite")
