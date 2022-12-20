@@ -80,10 +80,10 @@ logLevel: info
 --min-memory int (default 0)
     Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite
 
---cpu-factor int (default 1)
+--cpu-factor float (default 1)
     A factor to multiply CPU requests when reconciling.
 
---memory-factor int (default 1)
+--memory-factor float (default 1)
     A factor to multiply Memory requests when reconciling.
 ```
 
