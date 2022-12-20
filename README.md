@@ -5,7 +5,10 @@
 
 **kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/increase) their requests based on the average usage.
 
-NOTE: This is an alternative to [Vertical-Pod-Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler). The intended use of this project is to provide a simpler, more straightforward install and mechanism, without CRDs, **and that can work with [Horizontal-Pod-Autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).**
+When all required conditions meet, the controller calculates the result requirements based on all the samples taken so far a pod.
+It then goes "upstream" to the parent controller of that pod, for example *Deployment*, and updates the relevant containers for the pod inside the deployment as a reconciliation, as if its desired state is the new state with the new requirements.
+
+Note: This is an alternative to [Vertical-Pod-Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler). The intended use of this project is to provide a simpler, more straightforward install and mechanism, without CRDs, **and that can work with [Horizontal-Pod-Autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).**
 ## Deploy - Helm
 
 ```bash
@@ -17,6 +20,7 @@ helm install kube-reqsizer/kube-reqsizer
 **Core Values:**
 
 ```yaml
+enabledAnnotation: true
 sampleSize: 1
 minSeconds: 1
 enableIncrease: true
@@ -25,7 +29,8 @@ maxMemory: 0
 minMemory: 0
 maxCPU: 0
 minCPU: 0
-enabledAnnotation: true
+cpuFactor: 1
+memoryFactor: 1
 logLevel: info
 ```
 ## Prerequisites
@@ -51,7 +56,7 @@ logLevel: info
 
     The sample size to create an average from when reconciling.
 
---min-seconds int (default 1)
+--min-seconds float (default 1)
 
     Minimum seconds between pod restart.
     This ensures the controller will not restart a pod if the minimum time
@@ -74,6 +79,12 @@ logLevel: info
 
 --min-memory int (default 0)
     Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite
+
+--cpu-factor float (default 1)
+    A factor to multiply CPU requests when reconciling.
+
+--memory-factor float (default 1)
+    A factor to multiply Memory requests when reconciling.
 ```
 
 ### Annotations 

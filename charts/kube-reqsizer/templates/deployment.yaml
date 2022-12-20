@@ -32,6 +32,8 @@ spec:
         - --max-memory={{.Values.maxMemory}}
         - --min-cpu={{.Values.minCPU}}
         - --min-memory={{.Values.minMemory}}
+        - --cpu-factor={{.Values.cpuFactor}}
+        - --memory-factor={{.Values.memoryFactor}}        
         resources:
           {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
         command:

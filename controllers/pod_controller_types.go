@@ -26,6 +26,8 @@ type PodReconciler struct {
 	MaxCPU                      int64
 	MinMemory                   int64
 	MinCPU                      int64
+	CPUFactor                   float64
+	MemoryFactor                float64
 }
 
 type PodRequests struct {

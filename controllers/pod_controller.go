@@ -162,17 +162,17 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 									switch r.GetPodMode(pod, ctx) {
 									case "average":
 										if r.ValidateCPU(currentC.CPU, AverageUsageCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageCPU))
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(AverageUsageCPU)*r.CPUFactor)))
 											PodChange = true
 										}
 									case "min":
 										if r.ValidateCPU(currentC.CPU, c.MinCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", c.MinCPU))
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MinCPU)*r.CPUFactor)))
 											PodChange = true
 										}
 									case "max":
 										if r.ValidateCPU(currentC.CPU, c.MaxCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", c.MaxCPU))
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MaxCPU)*r.CPUFactor)))
 											PodChange = true
 										}
 									}
@@ -182,17 +182,17 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 										switch r.GetPodMode(pod, ctx) {
 										case "average":
 											if r.ValidateMemory(currentC.Memory, AverageUsageMemory) {
-												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", AverageUsageMemory))
+												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(AverageUsageMemory)*r.MemoryFactor)))
 												PodChange = true
 											}
 										case "min":
 											if r.ValidateMemory(currentC.Memory, c.MinMemory) {
-												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", c.MinMemory))
+												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MinMemory)*r.MemoryFactor)))
 												PodChange = true
 											}
 										case "max":
 											if r.ValidateMemory(currentC.Memory, c.MaxMemory) {
-												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", c.MaxMemory))
+												pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MaxMemory)*r.MemoryFactor)))
 												PodChange = true
 											}
 										}

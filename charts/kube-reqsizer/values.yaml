@@ -1,3 +1,4 @@
+enabledAnnotation: true
 sampleSize: 1
 minSeconds: 1
 enableIncrease: true
@@ -6,7 +7,8 @@ maxMemory: 0
 minMemory: 0
 maxCPU: 0
 minCPU: 0
-enabledAnnotation: true
+cpuFactor: 1
+memoryFactor: 1
 logLevel: info
 
 controllerManager:
