@@ -17,6 +17,8 @@ spec:
         control-plane: controller-manager
       {{- include "kube-reqsizer.selectorLabels" . | nindent 8 }}
     spec:
+      annotations:
+        reqsizer.jatalocks.github.io/optimize: 'false'
       containers:
       - args:
         - --health-probe-bind-address=:8081
