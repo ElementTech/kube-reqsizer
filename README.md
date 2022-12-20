@@ -10,7 +10,9 @@
 <a  target="_blank"><img src="https://img.shields.io/github/go-mod/go-version/jatalocks/kube-reqsizer"/></a>
 </p>
 
-
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/99724952/208690465-cfeabd30-5845-4c72-97a3-b7983ef8bb97.png" width="800">
+</p>
 
 **kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/increase) their requests based on the average usage.
 
