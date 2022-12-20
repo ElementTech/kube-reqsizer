@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/99724952/208690465-cfeabd30-5845-4c72-97a3-b7983ef8bb97.png" width="800">
+  <img src="https://user-images.githubusercontent.com/99724952/208706458-3b0b53ab-e282-497d-92a3-7d835c828097.png" width="800">
 </p>
 
 **kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/increase) their requests based on the average usage.
