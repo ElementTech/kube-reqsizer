@@ -63,8 +63,8 @@ func main() {
 	var minMemory int64
 	var minCPU int64
 
-	var cpuFactor int64
-	var memoryFactor int64
+	var cpuFactor float64
+	var memoryFactor float64
 
 	flag.BoolVar(&enableIncrease, "enable-increase", true, "Enables the controller to increase pod requests")
 	flag.BoolVar(&enableReduce, "enable-reduce", true, "Enables the controller to reduce pod requests")
