@@ -100,7 +100,7 @@ concurrentWorkers: 20
 --memory-factor float (default 1)
     A factor to multiply Memory requests when reconciling.
 
---concurrent-workers (default 100)
+--concurrent-workers (default 20)
     How many pods to sample in parallel. This may affect the controller's stability.
 ```
 
