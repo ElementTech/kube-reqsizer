@@ -74,7 +74,7 @@ func main() {
 	flag.Float64Var(&cpuFactor, "cpu-factor", 1, "A factor to multiply CPU requests when reconciling. 1 By default.")
 	flag.Float64Var(&memoryFactor, "memory-factor", 1, "A factor to multiply Memory requests when reconciling. 1 By default.")
 
-	flag.UintVar(&concurrentWorkers, "concurrent-workers", 100, "How many pods to sample in parallel. This may affect the controller's stability.")
+	flag.UintVar(&concurrentWorkers, "concurrent-workers", 20, "How many pods to sample in parallel. This may affect the controller's stability.")
 
 	flag.Int64Var(&minMemory, "min-memory", 0, "Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
 	flag.Int64Var(&minCPU, "min-cpu", 0, "Minimum CPU in (m) that the controller can set a pod request to. 0 is infinite")

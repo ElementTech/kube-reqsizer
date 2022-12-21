@@ -45,7 +45,7 @@ minCPU: 0
 cpuFactor: 1
 memoryFactor: 1
 logLevel: info
-concurrentWorkers: 100
+concurrentWorkers: 20
 ```
 ## Prerequisites
 - The metrics server must be deployed in your cluster. Read more about [Metrics Server](https://github.com/kubernetes-sigs/metrics-server). This controller uses the **metrics.k8s.io** extension API group (apis/metrics.k8s.io/v1beta1)
