@@ -45,6 +45,7 @@ minCPU: 0
 cpuFactor: 1
 memoryFactor: 1
 logLevel: info
+concurrentWorkers: 100
 ```
 ## Prerequisites
 - The metrics server must be deployed in your cluster. Read more about [Metrics Server](https://github.com/kubernetes-sigs/metrics-server). This controller uses the **metrics.k8s.io** extension API group (apis/metrics.k8s.io/v1beta1)
@@ -98,6 +99,9 @@ logLevel: info
 
 --memory-factor float (default 1)
     A factor to multiply Memory requests when reconciling.
+
+--concurrent-workers (default 100)
+    How many pods to sample in parallel. This may affect the controller's stability.
 ```
 
 ### Annotations 

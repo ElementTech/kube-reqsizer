@@ -10,6 +10,8 @@ minCPU: 0
 cpuFactor: 1
 memoryFactor: 1
 logLevel: info
+concurrentWorkers: 100
+
 
 controllerManager:
   manager:
