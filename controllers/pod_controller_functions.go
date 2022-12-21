@@ -94,10 +94,11 @@ func UpdatePodController(podspec *corev1.PodSpec, Requests []NewContainerRequest
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager, concurrentWorkers uint) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{
-			MaxConcurrentReconciles: 4,
+			MaxConcurrentReconciles: int(concurrentWorkers),
+			RecoverPanic:            true,
 		}).
 		For(&corev1.Pod{}).
 		Complete(r)

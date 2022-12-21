@@ -36,6 +36,7 @@ spec:
         - --min-memory={{.Values.minMemory}}
         - --cpu-factor={{.Values.cpuFactor}}
         - --memory-factor={{.Values.memoryFactor}}        
+        - --concurrent-workers={{.Values.concurrentWorkers}}        
         resources:
           {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
         command:

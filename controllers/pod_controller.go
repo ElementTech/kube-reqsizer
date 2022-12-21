@@ -99,51 +99,47 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			addToCache(cacheStore, SumPodRequest)
 			log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
 		} else {
-			if err != nil {
-				log.Error(err, err.Error())
-			} else {
-				SumPodRequest.Sample = LatestPodRequest.Sample + 1
-				if LatestPodRequest.Sample == 1 {
-					SumPodRequest.Timestamp = time.Now()
-					LatestPodRequest.Timestamp = SumPodRequest.Timestamp
-				}
-				log.Info(fmt.Sprint(time.Now(), LatestPodRequest.Timestamp))
-				SumPodRequest.TimeSinceFirstSample = time.Since(LatestPodRequest.Timestamp).Seconds()
 
-				log.Info(fmt.Sprint("Updating cache sample ", SumPodRequest.Sample))
+			SumPodRequest.Sample = LatestPodRequest.Sample + 1
+			if LatestPodRequest.Sample == 1 {
+				SumPodRequest.Timestamp = time.Now()
+				LatestPodRequest.Timestamp = SumPodRequest.Timestamp
+			}
+			log.Info(fmt.Sprint(time.Now(), LatestPodRequest.Timestamp))
+			SumPodRequest.TimeSinceFirstSample = time.Since(LatestPodRequest.Timestamp).Seconds()
 
-				for _, sumC := range SumPodRequest.ContainerRequests {
-					for _, latestC := range LatestPodRequest.ContainerRequests {
-						if latestC.Name == sumC.Name {
-							sumCAddr := &sumC
-							if latestC.CPU > 0 {
-								sumCAddr.MaxCPU = int64(math.Max(float64(sumCAddr.MaxCPU), float64(latestC.CPU)))
-								sumCAddr.MinCPU = int64(math.Min(float64(sumCAddr.MinCPU), float64(latestC.CPU)))
-							} else {
-								// sumCAddr.MaxCPU = latestC.CPU
-								sumCAddr.MinCPU = 1
-							}
-							if latestC.Memory > 0 {
-								sumCAddr.MaxMemory = int64(math.Max(float64(sumCAddr.MaxMemory), float64(latestC.Memory)))
-								sumCAddr.MinMemory = int64(math.Min(float64(sumCAddr.MinMemory), float64(latestC.Memory)))
-							} else {
-								// sumCAddr.MaxMemory = latestC.Memory
-								sumCAddr.MinMemory = 1
-							}
-							sumCAddr.CPU += latestC.CPU
-							sumCAddr.Memory += latestC.Memory
+			log.Info(fmt.Sprint("Updating cache sample ", SumPodRequest.Sample))
+
+			for _, sumC := range SumPodRequest.ContainerRequests {
+				for _, latestC := range LatestPodRequest.ContainerRequests {
+					if latestC.Name == sumC.Name {
+						sumCAddr := &sumC
+						if latestC.CPU > 0 {
+							sumCAddr.MaxCPU = int64(math.Max(float64(sumCAddr.MaxCPU), float64(latestC.CPU)))
+							sumCAddr.MinCPU = int64(math.Min(float64(sumCAddr.MinCPU), float64(latestC.CPU)))
+						} else {
+							// sumCAddr.MaxCPU = latestC.CPU
+							sumCAddr.MinCPU = 1
 						}
+						if latestC.Memory > 0 {
+							sumCAddr.MaxMemory = int64(math.Max(float64(sumCAddr.MaxMemory), float64(latestC.Memory)))
+							sumCAddr.MinMemory = int64(math.Min(float64(sumCAddr.MinMemory), float64(latestC.Memory)))
+						} else {
+							// sumCAddr.MaxMemory = latestC.Memory
+							sumCAddr.MinMemory = 1
+						}
+						sumCAddr.CPU += latestC.CPU
+						sumCAddr.Memory += latestC.Memory
 					}
 				}
+			}
 
-				err := deleteFromCache(cacheStore, LatestPodRequest)
-				if err != nil {
-					log.Error(err, err.Error())
-				}
-				err = addToCache(cacheStore, SumPodRequest)
-				if err != nil {
-					log.Error(err, err.Error())
-				}
+			if err := deleteFromCache(cacheStore, LatestPodRequest); err != nil {
+				log.Error(err, err.Error())
+			}
+
+			if err = addToCache(cacheStore, SumPodRequest); err != nil {
+				log.Error(err, err.Error())
 			}
 		}
 		log.Info(fmt.Sprint(SumPodRequest))

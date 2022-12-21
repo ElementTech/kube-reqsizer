@@ -62,6 +62,7 @@ func main() {
 	var maxCPU int64
 	var minMemory int64
 	var minCPU int64
+	var concurrentWorkers uint
 
 	var cpuFactor float64
 	var memoryFactor float64
@@ -72,6 +73,8 @@ func main() {
 	flag.Int64Var(&maxCPU, "max-cpu", 0, "Maximum CPU in (m) that the controller can set a pod request to. 0 is infinite")
 	flag.Float64Var(&cpuFactor, "cpu-factor", 1, "A factor to multiply CPU requests when reconciling. 1 By default.")
 	flag.Float64Var(&memoryFactor, "memory-factor", 1, "A factor to multiply Memory requests when reconciling. 1 By default.")
+
+	flag.UintVar(&concurrentWorkers, "concurrent-workers", 100, "How many pods to sample in parallel. This may affect the controller's stability.")
 
 	flag.Int64Var(&minMemory, "min-memory", 0, "Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
 	flag.Int64Var(&minCPU, "min-cpu", 0, "Minimum CPU in (m) that the controller can set a pod request to. 0 is infinite")
@@ -140,7 +143,7 @@ func main() {
 		MinCPU:                      minCPU,
 		CPUFactor:                   cpuFactor,
 		MemoryFactor:                memoryFactor,
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, concurrentWorkers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		log.Error(err, err.Error())
 		os.Exit(1)
