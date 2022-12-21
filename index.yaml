@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   kube-reqsizer:
   - apiVersion: v2
+    created: "2022-12-21T08:45:49.773327574Z"
+    description: A Helm chart for Kubernetes
+    digest: 4cd9f06ccad9bd7a6e45d0804955956cda1ce52cb151105e086d7955aab46657
+    name: kube-reqsizer
+    type: application
+    urls:
+    - https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.8.1/kube-reqsizer-0.8.1.tgz
+    version: 0.8.1
+  - apiVersion: v2
     created: "2022-12-21T08:08:38.792179674Z"
     description: A Helm chart for Kubernetes
     digest: d3fe2897e5239e73f695277e1b35168d2f081aa3af77f1d6acca7c42acb2dd7f
@@ -129,4 +138,4 @@ entries:
     urls:
     - https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.1.0/kube-reqsizer-0.1.0.tgz
     version: 0.1.0
-generated: "2022-12-21T08:08:38.792258578Z"
+generated: "2022-12-21T08:45:49.773405374Z"
