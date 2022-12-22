@@ -93,20 +93,12 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		LatestPodRequest, err := fetchFromCache(cacheStore, pod.Name)
 		if err != nil {
 			SumPodRequest.Sample = 0
-			// SumPodRequest.TimeSinceFirstSample = 0
-			// SumPodRequest.Timestamp = time.Now()
 			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))
 			addToCache(cacheStore, SumPodRequest)
 			log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
 		} else {
-
+			log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
 			SumPodRequest.Sample = LatestPodRequest.Sample + 1
-			// if LatestPodRequest.Sample == 1 {
-			// 	SumPodRequest.Timestamp = time.Now()
-			// 	LatestPodRequest.Timestamp = SumPodRequest.Timestamp
-			// }
-			// log.Info(fmt.Sprint(time.Now(), LatestPodRequest.Timestamp))
-			// SumPodRequest.TimeSinceFirstSample = time.Since(LatestPodRequest.Timestamp).Seconds()
 
 			log.Info(fmt.Sprint("Updating cache sample ", SumPodRequest.Sample))
 
@@ -155,9 +147,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					if currentC.Name == c.Name {
 						for i, v := range pod.Spec.Containers {
 							if v.Name == c.Name {
-								log.Info(c.Name)
-								log.Info(fmt.Sprint("Comparing CPU: ", fmt.Sprintf("%dm", AverageUsageCPU), " <> ", fmt.Sprintf("%dm", currentC.CPU)))
-								log.Info(fmt.Sprint("Comparing Memory: ", fmt.Sprintf("%dMi", AverageUsageMemory), " <> ", fmt.Sprintf("%dMi", currentC.Memory)))
+								log.Info(fmt.Sprint(c.Name, " Comparing CPU: ", fmt.Sprintf("%dm", AverageUsageCPU), " <> ", fmt.Sprintf("%dm", currentC.CPU)))
+								log.Info(fmt.Sprint(c.Name, " Comparing Memory: ", fmt.Sprintf("%dMi", AverageUsageMemory), " <> ", fmt.Sprintf("%dMi", currentC.Memory)))
+								if currentC.CPU < c.MinCPU && (c.MinCPU > 0) {
+									currentC.CPU = c.MinCPU
+								}
+								if (currentC.CPU > c.MaxCPU) && (c.MaxCPU > 0) {
+									currentC.CPU = c.MaxCPU
+								}
 								if pod.Spec.Containers[i].Resources.Requests != nil {
 									switch r.GetPodMode(pod, ctx) {
 									case "average":
@@ -178,6 +175,12 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 									}
 								}
 								if AverageUsageMemory > 0 {
+									if currentC.Memory < c.MinMemory && (c.MinMemory > 0) {
+										currentC.CPU = c.MinMemory
+									}
+									if (currentC.Memory > c.MaxMemory) && (c.MaxMemory > 0) {
+										currentC.CPU = c.MaxMemory
+									}
 									if pod.Spec.Containers[i].Resources.Requests != nil {
 										switch r.GetPodMode(pod, ctx) {
 										case "average":

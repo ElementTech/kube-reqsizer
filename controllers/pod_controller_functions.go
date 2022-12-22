@@ -223,7 +223,6 @@ func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.C
 	options := metav1.ListOptions{
 		LabelSelector: "app=" + deploymentName,
 	}
-
 	podList, _ := r.ClientSet.CoreV1().Pods(pod.Namespace).List(ctx, options)
 	// List() returns a pointer to slice, derefernce it, before iterating
 	for _, podInfo := range (*podList).Items {
@@ -244,6 +243,7 @@ func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (e
 			return err, nil, nil, ""
 		}
 		deployment, err := r.ClientSet.AppsV1().Deployments(pod.Namespace).Get(ctx, replica.OwnerReferences[0].Name, metav1.GetOptions{})
+		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 		if replica.OwnerReferences[0].Kind == "Deployment" {
 			return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 		} else {
@@ -251,12 +251,13 @@ func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (e
 		}
 	case "DaemonSet":
 		deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
+		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 	case "StatefulSet":
 		deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
+		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 	default:
 		return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
 	}
-	return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
 }
