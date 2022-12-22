@@ -146,17 +146,17 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					if currentC.Name == c.Name {
 						for i, v := range pod.Spec.Containers {
 							if v.Name == c.Name {
-								if AverageUsageCPU < c.MinCPU && (c.MinCPU > 0) {
-									AverageUsageCPU = c.MinCPU
+								if AverageUsageCPU < r.MinCPU && (r.MinCPU > 0) {
+									AverageUsageCPU = r.MinCPU
 								}
-								if (AverageUsageCPU > c.MaxCPU) && (c.MaxCPU > 0) {
-									AverageUsageCPU = c.MaxCPU
+								if AverageUsageCPU > r.MaxCPU && (r.MaxCPU > 0) {
+									AverageUsageCPU = r.MaxCPU
 								}
-								if AverageUsageMemory < c.MinMemory && (c.MinMemory > 0) {
-									AverageUsageMemory = c.MinMemory
+								if AverageUsageMemory < r.MinMemory && (r.MinMemory > 0) {
+									AverageUsageMemory = r.MinMemory
 								}
-								if AverageUsageMemory > c.MaxMemory && (c.MaxMemory > 0) {
-									AverageUsageMemory = c.MaxMemory
+								if AverageUsageMemory > r.MaxMemory && (r.MaxMemory > 0) {
+									AverageUsageMemory = r.MaxMemory
 								}
 								log.Info(fmt.Sprint(c.Name, " Comparing CPU: ", fmt.Sprintf("%dm", AverageUsageCPU), " <> ", fmt.Sprintf("%dm", currentC.CPU)))
 								log.Info(fmt.Sprint(c.Name, " Comparing Memory: ", fmt.Sprintf("%dMi", AverageUsageMemory), " <> ", fmt.Sprintf("%dMi", currentC.Memory)))
@@ -168,7 +168,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, AverageUsageMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(AverageUsageMemory)*r.MemoryFactor)))
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(AverageUsageMemory)*r.MemoryFactor)))
 											PodChange = true
 										}
 									case "min":
@@ -177,7 +177,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, c.MinMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MinMemory)*r.MemoryFactor)))
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MinMemory)*r.MemoryFactor)))
 											PodChange = true
 										}
 									case "max":
@@ -186,7 +186,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, c.MaxMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MaxMemory)*r.MemoryFactor)))
+											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MaxMemory)*r.MemoryFactor)))
 											PodChange = true
 										}
 									}
