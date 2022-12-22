@@ -26,10 +26,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;update;patch
@@ -93,20 +93,20 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		LatestPodRequest, err := fetchFromCache(cacheStore, pod.Name)
 		if err != nil {
 			SumPodRequest.Sample = 0
-			SumPodRequest.TimeSinceFirstSample = 0
-			SumPodRequest.Timestamp = time.Now()
+			// SumPodRequest.TimeSinceFirstSample = 0
+			// SumPodRequest.Timestamp = time.Now()
 			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))
 			addToCache(cacheStore, SumPodRequest)
 			log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
 		} else {
 
 			SumPodRequest.Sample = LatestPodRequest.Sample + 1
-			if LatestPodRequest.Sample == 1 {
-				SumPodRequest.Timestamp = time.Now()
-				LatestPodRequest.Timestamp = SumPodRequest.Timestamp
-			}
-			log.Info(fmt.Sprint(time.Now(), LatestPodRequest.Timestamp))
-			SumPodRequest.TimeSinceFirstSample = time.Since(LatestPodRequest.Timestamp).Seconds()
+			// if LatestPodRequest.Sample == 1 {
+			// 	SumPodRequest.Timestamp = time.Now()
+			// 	LatestPodRequest.Timestamp = SumPodRequest.Timestamp
+			// }
+			// log.Info(fmt.Sprint(time.Now(), LatestPodRequest.Timestamp))
+			// SumPodRequest.TimeSinceFirstSample = time.Since(LatestPodRequest.Timestamp).Seconds()
 
 			log.Info(fmt.Sprint("Updating cache sample ", SumPodRequest.Sample))
 
@@ -143,7 +143,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 		}
 		log.Info(fmt.Sprint(SumPodRequest))
-		if (SumPodRequest.Sample >= r.SampleSize) && (SumPodRequest.TimeSinceFirstSample >= r.MinSecondsBetweenPodRestart) {
+		if (SumPodRequest.Sample >= r.SampleSize) && r.MinimumUptimeOfPodInParent(pod, ctx) {
 			log.Info("Sample Size and Minimum Time have been reached")
 			PodChange := false
 			Requests := []NewContainerRequests{}
@@ -206,6 +206,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 			if PodChange {
 				pod.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
+
 				log.Info("Pod Requests Will Change")
 
 				if len(pod.OwnerReferences) == 0 {
@@ -213,61 +214,17 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					return r.UpdateKubeObject(&pod, ctx)
 				}
 
-				var ownerName string
-				switch pod.OwnerReferences[0].Kind {
-				case "ReplicaSet":
-					replica, err := r.ClientSet.AppsV1().ReplicaSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
-					if err != nil {
-						log.Error(err, err.Error())
-						return ctrl.Result{}, err
-					}
-
-					ownerName = replica.OwnerReferences[0].Name
-					if replica.OwnerReferences[0].Kind == "Deployment" {
-						log.Info("Is Owned by Deployment")
-						deployment, err := r.ClientSet.AppsV1().Deployments(pod.Namespace).Get(ctx, ownerName, metav1.GetOptions{})
-						if err != nil {
-							log.Error(err, err.Error())
-							return ctrl.Result{}, err
-						}
-						UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
-						deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
-
-						return r.UpdateKubeObject(deployment, ctx)
-					} else {
-						log.Info("Is Owned by Unknown CRD")
-						return ctrl.Result{}, nil
-					}
-				case "DaemonSet":
-					log.Info("Is Owned by DaemonSet")
-					ownerName = pod.OwnerReferences[0].Name
-
-					deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, ownerName, metav1.GetOptions{})
-					if err != nil {
-						log.Error(err, err.Error())
-						return ctrl.Result{}, err
-					}
-					UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
-					deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
-					return r.UpdateKubeObject(deployment, ctx)
-				case "StatefulSet":
-					log.Info("Is Owned by StatefulSet")
-					ownerName = pod.OwnerReferences[0].Name
-
-					deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, ownerName, metav1.GetOptions{})
-					if err != nil {
-						log.Error(err, err.Error())
-						return ctrl.Result{}, err
-					}
-
-					UpdatePodController(&deployment.Spec.Template.Spec, Requests, ctx)
-					deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
-					return r.UpdateKubeObject(deployment, ctx)
-				default:
-					fmt.Printf("Could not find resource manager for type %s\n", pod.OwnerReferences[0].Kind)
+				err, podSpec, deployment, _ := r.GetPodParentKind(pod, ctx)
+				if err != nil {
+					return ctrl.Result{}, nil
 				}
 
+				UpdatePodController(podSpec, Requests, ctx)
+
+				return r.UpdateKubeObject(deployment.(client.Object), ctx)
+
 			}
+
 			err := deleteFromCache(cacheStore, SumPodRequest)
 			if err != nil {
 				log.Error(err, err.Error())
