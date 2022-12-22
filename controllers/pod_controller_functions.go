@@ -213,6 +213,7 @@ func GeneratePodRequestsObjectFromRestData(restData []byte) PodRequests {
 }
 
 func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.Context) bool {
+
 	if len(pod.OwnerReferences) == 0 {
 		return time.Since(pod.CreationTimestamp.Time).Seconds() >= r.MinSecondsBetweenPodRestart
 	}
