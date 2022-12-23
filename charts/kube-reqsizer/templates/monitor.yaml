@@ -8,11 +8,13 @@ metadata:
     release: prometheusoperator
   name: controller-manager-metrics-monitor
 spec:
+  jobLabel: kube-reqsizer-servicemonitor
   endpoints:
     - path: /metrics
       port: https
   namespaceSelector:
-    any: true      
+    matchNames:
+    - {{.Release.Namespace}}
   selector:
     matchLabels:
       control-plane: controller-manager
