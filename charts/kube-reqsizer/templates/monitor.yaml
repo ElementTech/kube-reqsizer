@@ -11,6 +11,8 @@ spec:
   endpoints:
     - path: /metrics
       port: https
+  namespaceSelector:
+    any: true      
   selector:
     matchLabels:
       control-plane: controller-manager
