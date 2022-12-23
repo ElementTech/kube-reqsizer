@@ -36,7 +36,7 @@ managerConfig:
       leaderElect: true
       resourceName: d84d636a.kube-reqsizer
     metrics:
-      bindAddress: 127.0.0.1:8080
+      bindAddress: :8080
     webhook:
       port: 9443
 metricsService:
