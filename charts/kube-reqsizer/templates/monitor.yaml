@@ -11,7 +11,7 @@ spec:
   jobLabel: kube-reqsizer-servicemonitor
   endpoints:
     - path: /metrics
-      port: https
+      port: metrics
   namespaceSelector:
     matchNames:
     - {{.Release.Namespace}}
