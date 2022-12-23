@@ -77,7 +77,7 @@ func (r *PodReconciler) UpdateKubeObject(pod client.Object, ctx context.Context)
 			return ctrl.Result{}, nil
 		}
 		log.Error(err, "unable to update pod")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 }
