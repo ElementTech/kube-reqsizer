@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -78,7 +77,7 @@ func (r *PodReconciler) UpdateKubeObject(pod client.Object, ctx context.Context)
 			return ctrl.Result{}, nil
 		}
 		log.Error(err, "unable to update pod")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 }
@@ -87,7 +86,7 @@ func UpdatePodController(podspec *corev1.PodSpec, Requests []NewContainerRequest
 	for _, podContainer := range Requests {
 		for i, depContainer := range podspec.Containers {
 			if depContainer.Name == podContainer.Name {
-				log.Info(fmt.Sprint("Setting", podContainer.Requests))
+				// log.Info(fmt.Sprint("Setting", podContainer.Requests))
 				podspec.Containers[i].Resources = podContainer.Requests
 			}
 		}
@@ -169,7 +168,7 @@ func GetPodRequests(pod corev1.Pod) PodRequests {
 		}
 		containerData = append(containerData, ContainerRequests{Name: c.Name, CPU: int64(nanoCores), Memory: int64(miMemory)})
 	}
-	return PodRequests{pod.Name, containerData, 0}
+	return PodRequests{pod.Name, pod.Namespace, containerData, 0}
 }
 
 func addToCache(cacheStore cache.Store, object PodRequests) error {
@@ -209,7 +208,7 @@ func GeneratePodRequestsObjectFromRestData(restData []byte) PodRequests {
 		kiMemory, _ := strconv.Atoi(strings.ReplaceAll(c.Usage.Memory, "Ki", ""))
 		containerData = append(containerData, ContainerRequests{Name: c.Name, CPU: int64(nanoCores / 1000000), Memory: int64(kiMemory / 1000)})
 	}
-	return PodRequests{data.Metadata.Name, containerData, 0}
+	return PodRequests{data.Metadata.Name, data.Metadata.Namespace, containerData, 0}
 }
 
 func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.Context) bool {
@@ -244,7 +243,6 @@ func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (e
 			return err, nil, nil, ""
 		}
 		deployment, err := r.ClientSet.AppsV1().Deployments(pod.Namespace).Get(ctx, replica.OwnerReferences[0].Name, metav1.GetOptions{})
-		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 		if replica.OwnerReferences[0].Kind == "Deployment" {
 			return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 		} else {
@@ -252,11 +250,9 @@ func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (e
 		}
 	case "DaemonSet":
 		deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
-		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 	case "StatefulSet":
 		deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
-		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 	default:
 		return errors.New("Is Owned by Unknown CRD"), nil, nil, ""

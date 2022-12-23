@@ -40,10 +40,10 @@ const (
 )
 
 func cacheKeyFunc(obj interface{}) (string, error) {
-	return obj.(PodRequests).Name, nil
+	return obj.(PodRequests).Name + obj.(PodRequests).Namespace, nil
 }
 
-var cacheStore = cache.NewTTLStore(cacheKeyFunc, 48*time.Hour)
+var cacheStore = cache.NewStore(cacheKeyFunc)
 
 // Reconcile handles a reconciliation request for a Pod.
 func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -59,37 +59,40 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			// we'll ignore not-found errors, since they can't be fixed by an immediate
 			// requeue (we'll need to wait for a new notification), and we can get them
 			// on deleted requests.
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
-		log.Error(err, "unable to fetch Pod")
-		return ctrl.Result{}, err
+		log.Error(nil, "unable to fetch Pod")
+		return ctrl.Result{}, nil
 	}
 
 	annotation, err := r.NamespaceOrPodHaveAnnotation(pod, ctx)
 	if err != nil {
-		log.Error(err, "failed to get annotations")
-		return ctrl.Result{}, err
+		log.Error(nil, "failed to get annotations")
+		return ctrl.Result{}, nil
 	}
 	ignoreAnnotation, err := r.NamespaceOrPodHaveIgnoreAnnotation(pod, ctx)
 	if err != nil {
-		log.Error(err, "failed to get annotations")
-		return ctrl.Result{}, err
+		log.Error(nil, "failed to get annotations")
+		return ctrl.Result{}, nil
 	}
 
 	if ((!r.EnableAnnotation) || (r.EnableAnnotation && annotation)) && !ignoreAnnotation {
 		data, err := r.ClientSet.RESTClient().Get().AbsPath(fmt.Sprintf("apis/metrics.k8s.io/v1beta1/namespaces/%v/pods/%v", pod.Namespace, pod.Name)).DoRaw(ctx)
 
 		if err != nil {
-			log.Error(err, "failed to get stats from pod")
-			return ctrl.Result{}, err
+			log.Error(nil, "failed to get stats from pod")
+			return ctrl.Result{}, nil
 		}
 		PodUsageData := GeneratePodRequestsObjectFromRestData(data)
-
-		SumPodRequest := PodRequests{Name: pod.Name, ContainerRequests: []ContainerRequests{}}
+		err, _, _, deploymentName := r.GetPodParentKind(pod, ctx)
+		if err != nil {
+			deploymentName = pod.Name
+		}
+		SumPodRequest := PodRequests{Name: deploymentName, Namespace: pod.Namespace, ContainerRequests: []ContainerRequests{}}
 
 		SumPodRequest.ContainerRequests = PodUsageData.ContainerRequests
 
-		LatestPodRequest, err := fetchFromCache(cacheStore, pod.Name)
+		LatestPodRequest, err := fetchFromCache(cacheStore, deploymentName+pod.Namespace)
 		if err != nil {
 			SumPodRequest.Sample = 0
 			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))

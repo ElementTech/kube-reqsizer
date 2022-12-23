@@ -31,7 +31,8 @@ type PodReconciler struct {
 }
 
 type PodRequests struct {
-	Name              string
+	Name              string // Name of Deployment Controller
+	Namespace         string
 	ContainerRequests []ContainerRequests
 	Sample            int
 	// TimeSinceFirstSample float64

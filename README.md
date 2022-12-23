@@ -16,8 +16,8 @@
 
 **kube-reqsizer** is a kubernetes controller that will measure the usage of pods over time and optimize (reduce/increase) their requests based on the average usage.
 
-When all required conditions meet, the controller calculates the result requirements based on all the samples taken so far a pod.
-It then goes "upstream" to the parent controller of that pod, for example *Deployment*, and updates the relevant containers for the pod inside the deployment as a reconciliation, as if its desired state is the new state with the new requirements.
+When all required conditions meet, the controller calculates the result requirements based on all the samples taken so far a pod and its peers in the same deployment controller.
+It then goes "upstream" to the parent controller of that pod, for example *Deployment*, and updates the relevant containers for the pods inside the deployment as a reconciliation, as if its desired state is the new state with the new requirements.
 
 <img src="./assets/example.png" width="200">
 
