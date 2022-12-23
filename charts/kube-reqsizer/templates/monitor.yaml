@@ -7,7 +7,6 @@ metadata:
     control-plane: controller-manager
     release: prometheusoperator
   name: controller-manager-metrics-monitor
-  namespace: system
 spec:
   endpoints:
     - path: /metrics
