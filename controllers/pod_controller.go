@@ -62,18 +62,18 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			return ctrl.Result{}, nil
 		}
 		log.Error(nil, "unable to fetch Pod")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
 	annotation, err := r.NamespaceOrPodHaveAnnotation(pod, ctx)
 	if err != nil {
 		log.Error(nil, "failed to get annotations")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 	ignoreAnnotation, err := r.NamespaceOrPodHaveIgnoreAnnotation(pod, ctx)
 	if err != nil {
 		log.Error(nil, "failed to get annotations")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
 	if ((!r.EnableAnnotation) || (r.EnableAnnotation && annotation)) && !ignoreAnnotation {
@@ -81,7 +81,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 		if err != nil {
 			log.Error(nil, "failed to get stats from pod")
-			return ctrl.Result{}, nil
+			return ctrl.Result{}, err
 		}
 		PodUsageData := GeneratePodRequestsObjectFromRestData(data)
 		err, _, _, deploymentName := r.GetPodParentKind(pod, ctx)
@@ -213,7 +213,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 				err, podSpec, deployment, _ := r.GetPodParentKind(pod, ctx)
 				if err != nil {
-					return ctrl.Result{}, nil
+					return ctrl.Result{}, err
 				}
 
 				UpdatePodController(podSpec, Requests, ctx)
