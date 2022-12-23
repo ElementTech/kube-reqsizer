@@ -46,7 +46,7 @@ spec:
           value: {{ .Values.kubernetesClusterDomain }}
         ports:
         - name: metrics
-          containerPort: {{.Values.metricsService.ports[0].port}}
+          containerPort: {{ .Values.metricsService.port }}
         image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag }}
         imagePullPolicy: Always
         livenessProbe:

@@ -40,8 +40,5 @@ managerConfig:
     webhook:
       port: 9443
 metricsService:
-  ports:
-  - name: metrics
-    port: 8080
-    targetPort: metrics
+  port: 8080
   type: ClusterIP

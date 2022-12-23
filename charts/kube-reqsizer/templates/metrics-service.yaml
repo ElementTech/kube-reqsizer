@@ -11,4 +11,6 @@ spec:
     control-plane: controller-manager
   {{- include "kube-reqsizer.selectorLabels" . | nindent 4 }}
   ports:
-	{{- .Values.metricsService.ports | toYaml | nindent 2 -}}
+    - name: metrics
+      port: {{ .Values.metricsService.port }}
+      targetPort: metrics  
