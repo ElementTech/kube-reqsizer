@@ -13,8 +13,7 @@ spec:
     - path: /metrics
       port: metrics
   namespaceSelector:
-    matchNames:
-    - {{.Release.Namespace}}
+    any: true
   selector:
     matchLabels:
       control-plane: controller-manager
