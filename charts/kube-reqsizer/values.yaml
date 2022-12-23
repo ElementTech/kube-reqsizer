@@ -12,6 +12,7 @@ memoryFactor: 1
 logLevel: info
 concurrentWorkers: 10
 
+serviceMonitor: false
 
 controllerManager:
   manager:

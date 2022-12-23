@@ -252,6 +252,7 @@ func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (e
 		deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
 		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 	case "StatefulSet":
+		log.Info("STATEFUL SET HAHAHHAHA")
 		deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
 		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 	default:
