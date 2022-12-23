@@ -31,11 +31,11 @@ type PodReconciler struct {
 }
 
 type PodRequests struct {
-	Name                 string
-	ContainerRequests    []ContainerRequests
-	Sample               int
-	TimeSinceFirstSample float64
-	Timestamp            time.Time
+	Name              string
+	ContainerRequests []ContainerRequests
+	Sample            int
+	// TimeSinceFirstSample float64
+	// Timestamp            time.Time
 }
 
 type ContainerRequests struct {

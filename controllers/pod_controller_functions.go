@@ -12,6 +12,7 @@ import (
 
 	"github.com/labstack/gommon/log"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -168,7 +169,7 @@ func GetPodRequests(pod corev1.Pod) PodRequests {
 		}
 		containerData = append(containerData, ContainerRequests{Name: c.Name, CPU: int64(nanoCores), Memory: int64(miMemory)})
 	}
-	return PodRequests{pod.Name, containerData, 0, 0, time.Now()}
+	return PodRequests{pod.Name, containerData, 0}
 }
 
 func addToCache(cacheStore cache.Store, object PodRequests) error {
@@ -208,5 +209,56 @@ func GeneratePodRequestsObjectFromRestData(restData []byte) PodRequests {
 		kiMemory, _ := strconv.Atoi(strings.ReplaceAll(c.Usage.Memory, "Ki", ""))
 		containerData = append(containerData, ContainerRequests{Name: c.Name, CPU: int64(nanoCores / 1000000), Memory: int64(kiMemory / 1000)})
 	}
-	return PodRequests{data.Metadata.Name, containerData, 0, 0, time.Now()}
+	return PodRequests{data.Metadata.Name, containerData, 0}
+}
+
+func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.Context) bool {
+
+	if len(pod.OwnerReferences) == 0 {
+		return time.Since(pod.CreationTimestamp.Time).Seconds() >= r.MinSecondsBetweenPodRestart
+	}
+	err, _, _, deploymentName := r.GetPodParentKind(pod, ctx)
+	if err != nil {
+		return false
+	}
+	options := metav1.ListOptions{
+		LabelSelector: "app=" + deploymentName,
+	}
+	podList, _ := r.ClientSet.CoreV1().Pods(pod.Namespace).List(ctx, options)
+	// List() returns a pointer to slice, derefernce it, before iterating
+	for _, podInfo := range (*podList).Items {
+		if time.Since(podInfo.CreationTimestamp.Time).Seconds() < r.MinSecondsBetweenPodRestart {
+			return false
+		}
+	}
+	return true
+
+}
+
+func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (error, *v1.PodSpec, interface{}, string) {
+	switch pod.OwnerReferences[0].Kind {
+	case "ReplicaSet":
+		replica, err := r.ClientSet.AppsV1().ReplicaSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
+		if err != nil {
+			log.Error(err, err.Error())
+			return err, nil, nil, ""
+		}
+		deployment, err := r.ClientSet.AppsV1().Deployments(pod.Namespace).Get(ctx, replica.OwnerReferences[0].Name, metav1.GetOptions{})
+		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
+		if replica.OwnerReferences[0].Kind == "Deployment" {
+			return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
+		} else {
+			return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
+		}
+	case "DaemonSet":
+		deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
+		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
+		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
+	case "StatefulSet":
+		deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
+		deployment.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
+		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
+	default:
+		return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
+	}
 }
