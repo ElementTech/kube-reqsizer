@@ -26,6 +26,7 @@ import (
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/localcache"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
 	"github.com/jatalocks/kube-reqsizer/types"
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,6 +37,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;update;patch
@@ -66,8 +68,34 @@ const (
 	operatorModeAnnotation = "reqsizer.jatalocks.github.io/mode"
 )
 
+var (
+	cpuOffset = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "cpu_offset",
+			Help: "Number of milli-cores that have been increased/removed since startup",
+		},
+	)
+	memoryOffset = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "memory_offset",
+			Help: "Number of megabits that have been increased/removed since startup",
+		},
+	)
+	cacheSize = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "cache_size",
+			Help: "Number of pod controllers currently in cache",
+		},
+	)
+)
+
+func init() {
+	// Register custom metrics with the global prometheus registry
+	metrics.Registry.MustRegister(cpuOffset, memoryOffset, cacheSize)
+}
+
 func cacheKeyFunc(obj interface{}) (string, error) {
-	return obj.(types.PodRequests).Name + "-" + obj.(types.PodRequests).Namespace, nil
+	return obj.(types.PodRequests).Name, nil
 }
 
 var cacheStore = cache.NewStore(cacheKeyFunc)
@@ -75,35 +103,38 @@ var cacheStore = cache.NewStore(cacheKeyFunc)
 // Reconcile handles a reconciliation request for a Pod.
 func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("pod", req.NamespacedName)
-
+	if r.EnablePersistence {
+		cacheSize.Set(float64(r.RedisClient.CacheSize()))
+	} else {
+		cacheSize.Set(float64(len(cacheStore.List())))
+	}
 	/*
 		Step 0: Fetch the Pod from the Kubernetes API.
 	*/
-
 	var pod corev1.Pod
+
 	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
 		if apierrors.IsNotFound(err) {
-			// we'll ignore not-found errors, since they can't be fixed by an immediate
-			// requeue (we'll need to wait for a new notification), and we can get them
-			// on deleted requests.
 			return ctrl.Result{}, nil
 		}
 		log.Error(nil, "unable to fetch Pod")
 		return ctrl.Result{}, err
 	}
-
-	annotation, err := r.NamespaceOrPodHaveAnnotation(pod, ctx)
+	podReferenceName := r.GetPodCacheName(&pod) + "-" + pod.Namespace
+	annotation, err := r.NamespaceOrPodHaveAnnotation(&pod, ctx)
 	if err != nil {
 		log.Error(nil, "failed to get annotations")
 		return ctrl.Result{}, err
 	}
-	ignoreAnnotation, err := r.NamespaceOrPodHaveIgnoreAnnotation(pod, ctx)
+	ignoreAnnotation, err := r.NamespaceOrPodHaveIgnoreAnnotation(&pod, ctx)
 	if err != nil {
 		log.Error(nil, "failed to get annotations")
 		return ctrl.Result{}, err
 	}
 
 	if ((!r.EnableAnnotation) || (r.EnableAnnotation && annotation)) && !ignoreAnnotation {
+		log.Info("Cache Reference Name: " + podReferenceName)
+
 		data, err := r.ClientSet.RESTClient().Get().AbsPath(fmt.Sprintf("apis/metrics.k8s.io/v1beta1/namespaces/%v/pods/%v", pod.Namespace, pod.Name)).DoRaw(ctx)
 
 		if err != nil {
@@ -111,19 +142,16 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			return ctrl.Result{}, err
 		}
 		PodUsageData := GeneratePodRequestsObjectFromRestData(data)
-		err, _, _, deploymentName := r.GetPodParentKind(pod, ctx)
-		if err != nil {
-			deploymentName = pod.Name
-		}
-		SumPodRequest := types.PodRequests{Name: deploymentName, Namespace: pod.Namespace, ContainerRequests: []types.ContainerRequests{}}
+		SumPodRequest := types.PodRequests{Name: podReferenceName, Namespace: pod.Namespace, ContainerRequests: []types.ContainerRequests{}}
 
 		SumPodRequest.ContainerRequests = PodUsageData.ContainerRequests
 		var LatestPodRequest types.PodRequests
 		if r.EnablePersistence {
-			LatestPodRequest, err = r.RedisClient.FetchFromCache(deploymentName + "-" + pod.Namespace)
+			LatestPodRequest, err = r.RedisClient.FetchFromCache(podReferenceName)
 		} else {
-			LatestPodRequest, err = localcache.FetchFromCache(cacheStore, deploymentName+"-"+pod.Namespace)
+			LatestPodRequest, err = localcache.FetchFromCache(cacheStore, podReferenceName)
 		}
+
 		if err != nil {
 			SumPodRequest.Sample = 0
 			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))
@@ -184,7 +212,6 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				}
 			}
 		}
-		log.Info(fmt.Sprint(SumPodRequest))
 		if (SumPodRequest.Sample >= r.SampleSize) && r.MinimumUptimeOfPodInParent(pod, ctx) {
 			log.Info("Sample Size and Minimum Time have been reached")
 			PodChange := false
@@ -216,28 +243,34 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 									case "average":
 										if r.ValidateCPU(currentC.CPU, AverageUsageCPU) {
 											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(AverageUsageCPU)*r.CPUFactor)))
+											cpuOffset.Add(float64(int(float64(AverageUsageCPU)*r.CPUFactor) - int(currentC.CPU)))
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, AverageUsageMemory) {
 											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(AverageUsageMemory)*r.MemoryFactor)))
+											memoryOffset.Add(float64(int(float64(AverageUsageMemory)*r.MemoryFactor) - int(currentC.Memory)))
 											PodChange = true
 										}
 									case "min":
 										if r.ValidateCPU(currentC.CPU, c.MinCPU) {
 											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MinCPU)*r.CPUFactor)))
+											cpuOffset.Add(float64(int(float64(c.MinCPU)*r.CPUFactor) - int(currentC.CPU)))
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, c.MinMemory) {
 											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MinMemory)*r.MemoryFactor)))
+											memoryOffset.Add(float64(int(float64(c.MinMemory)*r.MemoryFactor) - int(currentC.Memory)))
 											PodChange = true
 										}
 									case "max":
 										if r.ValidateCPU(currentC.CPU, c.MaxCPU) {
 											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MaxCPU)*r.CPUFactor)))
+											cpuOffset.Add(float64(int(float64(c.MaxCPU)*r.CPUFactor) - int(currentC.CPU)))
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, c.MaxMemory) {
 											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MaxMemory)*r.MemoryFactor)))
+											memoryOffset.Add(float64(int(float64(c.MaxMemory)*r.MemoryFactor) - int(currentC.Memory)))
 											PodChange = true
 										}
 									}
@@ -247,6 +280,15 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 							}
 						}
 					}
+				}
+			}
+			if r.EnablePersistence {
+				if err := r.RedisClient.DeleteFromCache(SumPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
+			} else {
+				if err := localcache.DeleteFromCache(cacheStore, LatestPodRequest); err != nil {
+					log.Error(err, err.Error())
 				}
 			}
 			if PodChange {
@@ -267,20 +309,9 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				UpdatePodController(podSpec, Requests, ctx)
 
 				return r.UpdateKubeObject(deployment.(client.Object), ctx)
-
-			}
-
-			if r.EnablePersistence {
-				if err := r.RedisClient.DeleteFromCache(SumPodRequest); err != nil {
-					log.Error(err, err.Error())
-				}
-			} else {
-				if err := localcache.DeleteFromCache(cacheStore, LatestPodRequest); err != nil {
-					log.Error(err, err.Error())
-				}
 			}
 		}
 	}
 
-	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 }
