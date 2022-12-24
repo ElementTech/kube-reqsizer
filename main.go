@@ -83,7 +83,7 @@ func main() {
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.IntVar(&sampleSize, "sample-size", 1, "The sample size to create an average from when reconciling.")
 	flag.Float64Var(&minSecondsBetweenPodRestart, "min-seconds", 1, "Minimum seconds between pod restart. "+
-		"This ensures the controller will not restart a pod if the minimum time has not passed since it has started sampling it.")
+		"This ensures the controller will not restart a pod if the minimum time has not passed since it has started.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")

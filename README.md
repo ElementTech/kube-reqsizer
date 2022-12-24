@@ -74,7 +74,7 @@ concurrentWorkers: 10
 
     Minimum seconds between pod restart.
     This ensures the controller will not restart a pod if the minimum time
-    has not passed since it has started sampling it.
+    has not passed since it has started.
 
 --enable-increase (default true)
     Enables the controller to increase pod requests
@@ -119,7 +119,7 @@ reqsizer.jatalocks.github.io/mode=min       # Sets the request to the MINIMUM of
 ```
 ### Disclaimer
 
-`sample-size` is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size. If `min-seconds` has not yet passed since the pod has last been supposed to be sample-reconciled, the controller will keep sampling the pod until `min-seconds` have been reached and only then zero the sample and restart from cache.
+`sample-size` is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size. If `min-seconds` have not yet passed since the pod has been scheduled, the controller will keep sampling the pod until `min-seconds` have been reached and only then zero the sample and restart from cache.
 
 ### Edge Cases
 
