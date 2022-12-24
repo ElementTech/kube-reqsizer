@@ -11,7 +11,8 @@ cpuFactor: 1
 memoryFactor: 1
 logLevel: info
 concurrentWorkers: 10
-
+persistence:
+  enabled: true
 serviceMonitor: false
 
 controllerManager:
