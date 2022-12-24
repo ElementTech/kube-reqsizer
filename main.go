@@ -86,6 +86,12 @@ func main() {
 		Password: redisPassword, // no password set
 		DB:       int(redisDB),  // use default DB
 	})
+	log.Info(&redis.Options{
+		Addr:     redisHost + ":" + redisPort,
+		Password: redisPassword, // no password set
+		DB:       int(redisDB),  // use default DB
+	})
+	log.Info(redisClient)
 
 	flag.BoolVar(&enableIncrease, "enable-increase", true, "Enables the controller to increase pod requests")
 	flag.BoolVar(&enableReduce, "enable-reduce", true, "Enables the controller to reduce pod requests")
