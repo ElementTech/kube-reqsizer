@@ -18,7 +18,7 @@ func (client RedisClient) AddToCache(object types.PodRequests) error {
 		klog.Errorf("failed to add key value to cache error", err)
 		return err
 	}
-	err = client.Client.Set(object.Name+"-"+object.Namespace, val, 0).Err()
+	err = client.Client.Set(object.Name, val, 0).Err()
 	if err != nil {
 		klog.Errorf("failed to add key value to cache error", err)
 		return err
@@ -41,7 +41,7 @@ func (client RedisClient) FetchFromCache(key string) (types.PodRequests, error) 
 }
 
 func (client RedisClient) DeleteFromCache(object types.PodRequests) error {
-	return client.Client.Del(object.Name + "-" + object.Namespace).Err()
+	return client.Client.Del(object.Name).Err()
 }
 
 func (client RedisClient) CacheSize() int64 {

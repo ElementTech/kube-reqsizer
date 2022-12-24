@@ -15,12 +15,13 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
-func (r *PodReconciler) NamespaceOrPodHaveAnnotation(pod corev1.Pod, ctx context.Context) (bool, error) {
+func (r *PodReconciler) NamespaceOrPodHaveAnnotation(pod *corev1.Pod, ctx context.Context) (bool, error) {
 	podHasAnnotation := pod.Annotations[operatorAnnotation] == "true"
 	namespace, err := r.ClientSet.CoreV1().Namespaces().Get(ctx, pod.Namespace, metav1.GetOptions{})
 	if err != nil {
@@ -30,7 +31,7 @@ func (r *PodReconciler) NamespaceOrPodHaveAnnotation(pod corev1.Pod, ctx context
 	return (podHasAnnotation || namespaceHasAnnotation), nil
 }
 
-func (r *PodReconciler) NamespaceOrPodHaveIgnoreAnnotation(pod corev1.Pod, ctx context.Context) (bool, error) {
+func (r *PodReconciler) NamespaceOrPodHaveIgnoreAnnotation(pod *corev1.Pod, ctx context.Context) (bool, error) {
 	podHasIgnoreAnnotation := pod.Annotations[operatorAnnotation] == "false"
 	namespace, err := r.ClientSet.CoreV1().Namespaces().Get(ctx, pod.Namespace, metav1.GetOptions{})
 	if err != nil {
@@ -68,7 +69,7 @@ func (r *PodReconciler) UpdateKubeObject(pod client.Object, ctx context.Context)
 		if apierrors.IsConflict(err) {
 			// The Pod has been updated since we read it.
 			// Requeue the Pod to try to reconciliate again.
-			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+			return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 		if apierrors.IsNotFound(err) {
 			// The Pod has been deleted since we read it.
@@ -78,7 +79,7 @@ func (r *PodReconciler) UpdateKubeObject(pod client.Object, ctx context.Context)
 		log.Error(err, "unable to update pod")
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 }
 
 func UpdatePodController(podspec *corev1.PodSpec, Requests []types.NewContainerRequests, ctx context.Context) {
@@ -190,11 +191,22 @@ func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.C
 	}
 	err, _, _, deploymentName := r.GetPodParentKind(pod, ctx)
 	if err != nil {
+		log.Error(err)
 		return false
 	}
-	options := metav1.ListOptions{
-		LabelSelector: "app=" + deploymentName,
+
+	// Create the label selector
+	labelSelector := labels.Set{
+		"app":                         deploymentName,
+		"app.kubernetes.io/name":      deploymentName,
+		"app.kubernetes.io/instance":  deploymentName,
+		"app.kubernetes.io/component": deploymentName,
 	}
+
+	options := metav1.ListOptions{
+		LabelSelector: labelSelector.AsSelector().String(),
+	}
+
 	podList, _ := r.ClientSet.CoreV1().Pods(pod.Namespace).List(ctx, options)
 	// List() returns a pointer to slice, derefernce it, before iterating
 	for _, podInfo := range (*podList).Items {
@@ -207,26 +219,47 @@ func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.C
 }
 
 func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (error, *v1.PodSpec, interface{}, string) {
-	switch pod.OwnerReferences[0].Kind {
-	case "ReplicaSet":
-		replica, err := r.ClientSet.AppsV1().ReplicaSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
-		if err != nil {
-			log.Error(err, err.Error())
-			return err, nil, nil, ""
-		}
-		deployment, err := r.ClientSet.AppsV1().Deployments(pod.Namespace).Get(ctx, replica.OwnerReferences[0].Name, metav1.GetOptions{})
-		if replica.OwnerReferences[0].Kind == "Deployment" {
+	if len(pod.OwnerReferences) > 0 {
+		switch pod.OwnerReferences[0].Kind {
+		case "ReplicaSet":
+			replica, err := r.ClientSet.AppsV1().ReplicaSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
+			if err != nil {
+				log.Error(err, err.Error())
+				return err, nil, nil, ""
+			}
+			deployment, err := r.ClientSet.AppsV1().Deployments(pod.Namespace).Get(ctx, replica.OwnerReferences[0].Name, metav1.GetOptions{})
+			if replica.OwnerReferences[0].Kind == "Deployment" {
+				return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
+			} else {
+				return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
+			}
+		case "DaemonSet":
+			deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
 			return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
-		} else {
+		case "StatefulSet":
+			deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
+			return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
+		default:
 			return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
 		}
-	case "DaemonSet":
-		deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
-		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
-	case "StatefulSet":
-		deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
-		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
-	default:
-		return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
+	} else {
+		return errors.New("Pod Has No Owner"), nil, nil, ""
 	}
+}
+
+func (r *PodReconciler) GetPodCacheName(pod *corev1.Pod) string {
+	val, ok := pod.Labels["app"]
+	if !ok {
+		val, ok = pod.Labels["app.kubernetes.io/name"]
+		if !ok {
+			val, ok = pod.Labels["app.kubernetes.io/instance"]
+			if !ok {
+				val, ok = pod.Labels["app.kubernetes.io/component"]
+				if !ok {
+					val = strings.Split(pod.Name, "-")[0]
+				}
+			}
+		}
+	}
+	return val
 }
