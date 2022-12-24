@@ -52,7 +52,7 @@ persistence:
 ## Prerequisites
 - The metrics server must be deployed in your cluster. Read more about [Metrics Server](https://github.com/kubernetes-sigs/metrics-server). This controller uses the **metrics.k8s.io** extension API group (apis/metrics.k8s.io/v1beta1)
 
-## Description
+## Usage
 
 **kube-reqsizer** has primary custom flags:
 
@@ -102,12 +102,13 @@ persistence:
 ```
 
 ### Annotations 
+
 *If **annotation-filter** is **true**:*
 ```
 reqsizer.jatalocks.github.io/optimize=true  # Optimize Pod/Namespace
 reqsizer.jatalocks.github.io/optimize=false # Ignore Pod/Namespace
 ```
-These are available POD/Namespace annotations *Regardless of **annotation-filter**:*
+There are Pod/Namespace annotations available *Regardless of **annotation-filter**:*
 ```
 reqsizer.jatalocks.github.io/optimize=false # Ignore Pod/Namespace when optimizing entire cluster
 reqsizer.jatalocks.github.io/mode=average   # Default Mode. Optimizes based on average. If ommited, mode is average
@@ -118,6 +119,12 @@ reqsizer.jatalocks.github.io/mode=min       # Sets the request to the MINIMUM of
 
 `sample-size` is the amount of data-points the controller will store in cache before constructing an average for the pod. After a requests resizing, the cache will clean itself and a new average will be calculated based on the sample size. If `min-seconds` have not yet passed since the pod has been scheduled, the controller will keep sampling the pod until `min-seconds` have been reached and only then zero the sample and restart from cache.
 
+### Monitoring - Prometheus
+| Metric  | Type | Description |
+| ------------- | ------------- | ------------- |
+| cpu_offset  | Gauge  | Number of milli-cores that have been increased/removed since startup. Can be a positive/negative value.  |
+| memory_offset  | Gauge  | Number of megabits that have been increased/removed since startup. Can be a positive/negative value.  |
+| cache_size  | Gauge  | Number of pod controllers currently in cache.  |
 ### Edge Cases
 
 1. All samples in a certain cycle report `0` (less than 1):
