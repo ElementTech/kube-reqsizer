@@ -22,6 +22,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+
 	"github.com/go-redis/redis"
 	"github.com/jatalocks/kube-reqsizer/controllers"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
@@ -81,18 +82,6 @@ func main() {
 	flag.StringVar(&redisPassword, "redis-password", "", "Redis password")
 	flag.UintVar(&redisDB, "redis-db", 0, "Redis DB number")
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     redisHost + ":" + redisPort,
-		Password: redisPassword, // no password set
-		DB:       int(redisDB),  // use default DB
-	})
-	log.Info(&redis.Options{
-		Addr:     redisHost + ":" + redisPort,
-		Password: redisPassword, // no password set
-		DB:       int(redisDB),  // use default DB
-	})
-	log.Info(redisClient)
-
 	flag.BoolVar(&enableIncrease, "enable-increase", true, "Enables the controller to increase pod requests")
 	flag.BoolVar(&enableReduce, "enable-reduce", true, "Enables the controller to reduce pod requests")
 	flag.Int64Var(&maxMemory, "max-memory", 0, "Maximum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
@@ -119,6 +108,13 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisHost + ":" + redisPort,
+		Password: redisPassword, // no password set
+		DB:       int(redisDB),  // use default DB
+	})
+	log.Info(redisClient)
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
