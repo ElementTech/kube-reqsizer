@@ -15,7 +15,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -195,27 +194,22 @@ func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.C
 		return false
 	}
 
-	// Create the label selector
-	labelSelector := labels.Set{
-		"app":                         deploymentName,
-		"app.kubernetes.io/name":      deploymentName,
-		"app.kubernetes.io/instance":  deploymentName,
-		"app.kubernetes.io/component": deploymentName,
-	}
+	labelArray := []string{"app", "app.kubernetes.io/name", "app.kubernetes.io/instance", "app.kubernetes.io/component"}
+	overAllLength := 0
+	for _, l := range labelArray {
+		options := metav1.ListOptions{
+			LabelSelector: l + " in (" + deploymentName + ")",
+		}
+		podList, _ := r.ClientSet.CoreV1().Pods(pod.Namespace).List(ctx, options)
 
-	options := metav1.ListOptions{
-		LabelSelector: labelSelector.AsSelector().String(),
-	}
-
-	podList, _ := r.ClientSet.CoreV1().Pods(pod.Namespace).List(ctx, options)
-	// List() returns a pointer to slice, derefernce it, before iterating
-	for _, podInfo := range (*podList).Items {
-		if time.Since(podInfo.CreationTimestamp.Time).Seconds() < r.MinSecondsBetweenPodRestart {
-			return false
+		overAllLength += len((*podList).Items)
+		for _, podInfo := range (*podList).Items {
+			if time.Since(podInfo.CreationTimestamp.Time).Seconds() < r.MinSecondsBetweenPodRestart {
+				return false
+			}
 		}
 	}
-	return true
-
+	return overAllLength != 0
 }
 
 func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (error, *v1.PodSpec, interface{}, string) {
