@@ -17,6 +17,8 @@ spec:
         control-plane: controller-manager
       {{- include "kube-reqsizer.selectorLabels" . | nindent 8 }}
       annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: '8080'
         reqsizer.jatalocks.github.io/optimize: 'false'      
     spec:
       containers:
