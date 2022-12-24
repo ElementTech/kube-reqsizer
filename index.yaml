@@ -2,6 +2,20 @@ apiVersion: v1
 entries:
   kube-reqsizer:
   - apiVersion: v2
+    created: "2022-12-24T10:47:13.503851892Z"
+    dependencies:
+    - condition: persistence.enabled
+      name: redis
+      repository: https://charts.bitnami.com/bitnami
+      version: 17.4.0
+    description: A Helm chart for Kubernetes
+    digest: ed3e8a44712f4f450ff38d3c9b828b6e11805d25fc789ed81ccdd82e2b351af9
+    name: kube-reqsizer
+    type: application
+    urls:
+    - https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.9.2/kube-reqsizer-0.9.2.tgz
+    version: 0.9.2
+  - apiVersion: v2
     created: "2022-12-24T10:34:56.109293601Z"
     dependencies:
     - condition: persistence.enabled
@@ -247,4 +261,4 @@ entries:
     urls:
     - https://github.com/jatalocks/kube-reqsizer/releases/download/kube-reqsizer-0.1.0/kube-reqsizer-0.1.0.tgz
     version: 0.1.0
-generated: "2022-12-24T10:34:56.109491601Z"
+generated: "2022-12-24T10:47:13.504088796Z"
