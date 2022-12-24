@@ -46,6 +46,8 @@ cpuFactor: 1
 memoryFactor: 1
 logLevel: info
 concurrentWorkers: 10
+persistence:
+  enabled: true
 ```
 ## Prerequisites
 - The metrics server must be deployed in your cluster. Read more about [Metrics Server](https://github.com/kubernetes-sigs/metrics-server). This controller uses the **metrics.k8s.io** extension API group (apis/metrics.k8s.io/v1beta1)
@@ -55,53 +57,48 @@ concurrentWorkers: 10
 **kube-reqsizer** has primary custom flags:
 
 ```bash
+# Enable a annotation filter for pod scraping. 
+# True will only set requests of controllers of which PODS or NAMESPACE 
+# have the annotation set to "true".
+# If "false", will ignore annotations and work 
+# on all pods in the cluster unless
+# they have "false".
+
+# reqsizer.jatalocks.github.io/optimize=true
+# reqsizer.jatalocks.github.io/optimize=false
 --annotation-filter bool (default true)
-    
-    Enable a annotation filter for pod scraping. 
-    Enabling this will ensure that the controller 
-    only sets requests of controllers of which PODS or NAMESPACE 
-    have the annotation set to "true".
-    If "false", will ignore annotations and work on all pods in the cluster.
 
-    # reqsizer.jatalocks.github.io/optimize=true
-    # reqsizer.jatalocks.github.io/optimize=false
-
+# The sample size to create an average from when reconciling.
 --sample-size int (default 1)
 
-    The sample size to create an average from when reconciling.
-
+# Minimum seconds between pod restart.
+# This ensures the controller will not restart a pod if the minimum time
+# has not passed since it has started.
 --min-seconds float (default 1)
 
-    Minimum seconds between pod restart.
-    This ensures the controller will not restart a pod if the minimum time
-    has not passed since it has started.
-
+# Allow controller to reduce/increase requests
 --enable-increase (default true)
-    Enables the controller to increase pod requests
-
 --enable-reduce (default true)
-    Enables the controller to reduce pod requests
 
+# Min and Max CPU (m) and Memory (Mi) the controller can set a pod request to. 0 is infinite
 --max-cpu int (default 0)
-    Maximum CPU in (m) that the controller can set a pod request to. 0 is infinite 
-
 --max-memory int (default 0)
-    Maximum memory in (Mi) that the controller can set a pod request to. 0 is infinite
-
 --min-cpu int (default 0)
-    Minimum CPU in (m) that the controller can set a pod request to. 0 is infinite
-
 --min-memory int (default 0)
-    Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite
 
+# Multiply requests when reconciling
 --cpu-factor float (default 1)
-    A factor to multiply CPU requests when reconciling.
-
 --memory-factor float (default 1)
-    A factor to multiply Memory requests when reconciling.
 
+# How many pods to sample in parallel. This may affect the controllers stability.
 --concurrent-workers (default 10)
-    How many pods to sample in parallel. This may affect the controller's stability.
+
+# Persistence using Redis
+--enable-persistence (default false)
+--redis-host (default "localhost")
+--redis-port (default "6379")
+--redis-password (default "")
+--redis-db (default 0)
 ```
 
 ### Annotations 
@@ -140,8 +137,6 @@ reqsizer.jatalocks.github.io/mode=min       # Sets the request to the MINIMUM of
 ## Limitations
 
 - Does not work with CRD controllers (such as Argo Rollouts)
-- Does not have persistent cache. Will reset cache on controller restart
-
 # Development
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.

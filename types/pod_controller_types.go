@@ -1,34 +1,10 @@
-package controllers
+package types
 
 import (
 	"time"
 
-	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// PodReconciler reconciles a Pod object
-type PodReconciler struct {
-	client.Client
-	Log                         logr.Logger
-	Scheme                      *runtime.Scheme
-	ClientSet                   *kubernetes.Clientset
-	SampleSize                  int
-	EnableAnnotation            bool
-	MinSecondsBetweenPodRestart float64
-	EnableIncrease              bool
-	EnableReduce                bool
-	MaxMemory                   int64
-	MaxCPU                      int64
-	MinMemory                   int64
-	MinCPU                      int64
-	CPUFactor                   float64
-	MemoryFactor                float64
-}
 
 type PodRequests struct {
 	Name              string // Name of Deployment Controller

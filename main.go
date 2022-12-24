@@ -22,7 +22,9 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"github.com/go-redis/redis"
 	"github.com/jatalocks/kube-reqsizer/controllers"
+	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
 	"github.com/labstack/gommon/log"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -67,18 +69,33 @@ func main() {
 	var cpuFactor float64
 	var memoryFactor float64
 
+	var enablePersistence bool
+	var redisHost string
+	var redisPassword string
+	var redisPort string
+	var redisDB uint
+
+	flag.BoolVar(&enablePersistence, "enable-persistence", false, "Uses Redis as a persistent cache")
+	flag.StringVar(&redisHost, "redis-host", "localhost", "Redis host address")
+	flag.StringVar(&redisPort, "redis-port", "6379", "Redis port")
+	flag.StringVar(&redisPassword, "redis-password", "", "Redis password")
+	flag.UintVar(&redisDB, "redis-db", 0, "Redis DB number")
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisHost + ":" + redisPort,
+		Password: redisPassword, // no password set
+		DB:       int(redisDB),  // use default DB
+	})
+
 	flag.BoolVar(&enableIncrease, "enable-increase", true, "Enables the controller to increase pod requests")
 	flag.BoolVar(&enableReduce, "enable-reduce", true, "Enables the controller to reduce pod requests")
 	flag.Int64Var(&maxMemory, "max-memory", 0, "Maximum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
 	flag.Int64Var(&maxCPU, "max-cpu", 0, "Maximum CPU in (m) that the controller can set a pod request to. 0 is infinite")
 	flag.Float64Var(&cpuFactor, "cpu-factor", 1, "A factor to multiply CPU requests when reconciling. 1 By default.")
 	flag.Float64Var(&memoryFactor, "memory-factor", 1, "A factor to multiply Memory requests when reconciling. 1 By default.")
-
 	flag.UintVar(&concurrentWorkers, "concurrent-workers", 10, "How many pods to sample in parallel. This may affect the controller's stability.")
-
 	flag.Int64Var(&minMemory, "min-memory", 0, "Minimum memory in (Mi) that the controller can set a pod request to. 0 is infinite")
 	flag.Int64Var(&minCPU, "min-cpu", 0, "Minimum CPU in (m) that the controller can set a pod request to. 0 is infinite")
-
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.IntVar(&sampleSize, "sample-size", 1, "The sample size to create an average from when reconciling.")
@@ -143,6 +160,8 @@ func main() {
 		MinCPU:                      minCPU,
 		CPUFactor:                   cpuFactor,
 		MemoryFactor:                memoryFactor,
+		RedisClient:                 rediscache.RedisClient{Client: redisClient},
+		EnablePersistence:           enablePersistence,
 	}).SetupWithManager(mgr, concurrentWorkers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		log.Error(err, err.Error())

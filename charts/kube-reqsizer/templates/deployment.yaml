@@ -36,7 +36,9 @@ spec:
         - --min-memory={{.Values.minMemory}}
         - --cpu-factor={{.Values.cpuFactor}}
         - --memory-factor={{.Values.memoryFactor}}        
-        - --concurrent-workers={{.Values.concurrentWorkers}}        
+        - --concurrent-workers={{.Values.concurrentWorkers}}
+        - --enable-persistence={{.Values.persistence.enabled}}        
+        - --redis-host={{.Release.Name}}-redis-master
         resources:
           {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
         command:

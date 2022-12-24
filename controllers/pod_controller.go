@@ -22,10 +22,16 @@ import (
 	"math"
 	"time"
 
+	"github.com/go-logr/logr"
+	"github.com/jatalocks/kube-reqsizer/pkg/cache/localcache"
+	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
+	"github.com/jatalocks/kube-reqsizer/types"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,13 +40,34 @@ import (
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;update;patch
 
+// PodReconciler reconciles a Pod object
+type PodReconciler struct {
+	client.Client
+	Log                         logr.Logger
+	Scheme                      *runtime.Scheme
+	ClientSet                   *kubernetes.Clientset
+	SampleSize                  int
+	EnableAnnotation            bool
+	MinSecondsBetweenPodRestart float64
+	EnableIncrease              bool
+	EnableReduce                bool
+	MaxMemory                   int64
+	MaxCPU                      int64
+	MinMemory                   int64
+	MinCPU                      int64
+	CPUFactor                   float64
+	MemoryFactor                float64
+	RedisClient                 rediscache.RedisClient
+	EnablePersistence           bool
+}
+
 const (
 	operatorAnnotation     = "reqsizer.jatalocks.github.io/optimize"
 	operatorModeAnnotation = "reqsizer.jatalocks.github.io/mode"
 )
 
 func cacheKeyFunc(obj interface{}) (string, error) {
-	return obj.(PodRequests).Name + obj.(PodRequests).Namespace, nil
+	return obj.(types.PodRequests).Name + "-" + obj.(types.PodRequests).Namespace, nil
 }
 
 var cacheStore = cache.NewStore(cacheKeyFunc)
@@ -88,18 +115,31 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		if err != nil {
 			deploymentName = pod.Name
 		}
-		SumPodRequest := PodRequests{Name: deploymentName, Namespace: pod.Namespace, ContainerRequests: []ContainerRequests{}}
+		SumPodRequest := types.PodRequests{Name: deploymentName, Namespace: pod.Namespace, ContainerRequests: []types.ContainerRequests{}}
 
 		SumPodRequest.ContainerRequests = PodUsageData.ContainerRequests
-
-		LatestPodRequest, err := fetchFromCache(cacheStore, deploymentName+pod.Namespace)
+		var LatestPodRequest types.PodRequests
+		if r.EnablePersistence {
+			LatestPodRequest, err = r.RedisClient.FetchFromCache(deploymentName + "-" + pod.Namespace)
+		} else {
+			LatestPodRequest, err = localcache.FetchFromCache(cacheStore, deploymentName+"-"+pod.Namespace)
+		}
 		if err != nil {
 			SumPodRequest.Sample = 0
 			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))
-			addToCache(cacheStore, SumPodRequest)
-			log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
+			if r.EnablePersistence {
+				r.RedisClient.AddToCache(SumPodRequest)
+				log.Info(fmt.Sprint("Items in Cache: ", r.RedisClient.CacheSize()))
+			} else {
+				localcache.AddToCache(cacheStore, SumPodRequest)
+				log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
+			}
 		} else {
-			log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
+			if r.EnablePersistence {
+				log.Info(fmt.Sprint("Items in Cache: ", r.RedisClient.CacheSize()))
+			} else {
+				log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
+			}
 			SumPodRequest.Sample = LatestPodRequest.Sample + 1
 
 			log.Info(fmt.Sprint("Updating cache sample ", SumPodRequest.Sample))
@@ -128,19 +168,27 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				}
 			}
 
-			if err := deleteFromCache(cacheStore, LatestPodRequest); err != nil {
-				log.Error(err, err.Error())
-			}
-
-			if err = addToCache(cacheStore, SumPodRequest); err != nil {
-				log.Error(err, err.Error())
+			if r.EnablePersistence {
+				if err := r.RedisClient.DeleteFromCache(LatestPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
+				if err = r.RedisClient.AddToCache(SumPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
+			} else {
+				if err := localcache.DeleteFromCache(cacheStore, LatestPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
+				if err = localcache.AddToCache(cacheStore, SumPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
 			}
 		}
 		log.Info(fmt.Sprint(SumPodRequest))
 		if (SumPodRequest.Sample >= r.SampleSize) && r.MinimumUptimeOfPodInParent(pod, ctx) {
 			log.Info("Sample Size and Minimum Time have been reached")
 			PodChange := false
-			Requests := []NewContainerRequests{}
+			Requests := []types.NewContainerRequests{}
 			for _, c := range SumPodRequest.ContainerRequests {
 				AverageUsageCPU := c.CPU / int64(SumPodRequest.Sample)
 				AverageUsageMemory := c.Memory / int64(SumPodRequest.Sample)
@@ -195,7 +243,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 									}
 								}
 
-								Requests = append(Requests, NewContainerRequests{Name: c.Name, Requests: pod.Spec.Containers[i].Resources})
+								Requests = append(Requests, types.NewContainerRequests{Name: c.Name, Requests: pod.Spec.Containers[i].Resources})
 							}
 						}
 					}
@@ -222,9 +270,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 			}
 
-			err := deleteFromCache(cacheStore, SumPodRequest)
-			if err != nil {
-				log.Error(err, err.Error())
+			if r.EnablePersistence {
+				if err := r.RedisClient.DeleteFromCache(SumPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
+			} else {
+				if err := localcache.DeleteFromCache(cacheStore, LatestPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
 			}
 		}
 	}

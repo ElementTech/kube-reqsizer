@@ -9,13 +9,12 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/labstack/gommon/log"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -82,7 +81,7 @@ func (r *PodReconciler) UpdateKubeObject(pod client.Object, ctx context.Context)
 	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 }
 
-func UpdatePodController(podspec *corev1.PodSpec, Requests []NewContainerRequests, ctx context.Context) {
+func UpdatePodController(podspec *corev1.PodSpec, Requests []types.NewContainerRequests, ctx context.Context) {
 	for _, podContainer := range Requests {
 		for i, depContainer := range podspec.Containers {
 			if depContainer.Name == podContainer.Name {
@@ -149,8 +148,8 @@ func (r *PodReconciler) ValidateMemory(currentMemory, AverageUsageMemory int64) 
 	return false
 }
 
-func GetPodRequests(pod corev1.Pod) PodRequests {
-	containerData := []ContainerRequests{}
+func GetPodRequests(pod corev1.Pod) types.PodRequests {
+	containerData := []types.ContainerRequests{}
 	for _, c := range pod.Spec.Containers {
 		nanoCores, _ := strconv.Atoi(RemoveLastChar(c.Resources.Requests.Cpu().String()))
 		memString := c.Resources.Requests.Memory().String()
@@ -166,49 +165,22 @@ func GetPodRequests(pod corev1.Pod) PodRequests {
 			giMemory, _ := strconv.Atoi(strings.ReplaceAll(memString, "Gi", ""))
 			miMemory = giMemory / 1000
 		}
-		containerData = append(containerData, ContainerRequests{Name: c.Name, CPU: int64(nanoCores), Memory: int64(miMemory)})
+		containerData = append(containerData, types.ContainerRequests{Name: c.Name, CPU: int64(nanoCores), Memory: int64(miMemory)})
 	}
-	return PodRequests{pod.Name, pod.Namespace, containerData, 0}
+	return types.PodRequests{pod.Name, pod.Namespace, containerData, 0}
 }
 
-func addToCache(cacheStore cache.Store, object PodRequests) error {
-	err := cacheStore.Add(object)
-	if err != nil {
-		klog.Errorf("failed to add key value to cache error", err)
-		return err
-	}
-	return nil
-}
-
-func fetchFromCache(cacheStore cache.Store, key string) (PodRequests, error) {
-	obj, exists, err := cacheStore.GetByKey(key)
-	if err != nil {
-		// klog.Errorf("failed to add key value to cache error", err)
-		return PodRequests{}, err
-	}
-	if !exists {
-		// klog.Errorf("object does not exist in the cache")
-		err = errors.New("object does not exist in the cache")
-		return PodRequests{}, err
-	}
-	return obj.(PodRequests), nil
-}
-
-func deleteFromCache(cacheStore cache.Store, object PodRequests) error {
-	return cacheStore.Delete(object)
-}
-
-func GeneratePodRequestsObjectFromRestData(restData []byte) PodRequests {
+func GeneratePodRequestsObjectFromRestData(restData []byte) types.PodRequests {
 	s := restData[:]
-	data := PodMetricsRestData{}
+	data := types.PodMetricsRestData{}
 	json.Unmarshal([]byte(s), &data)
-	containerData := []ContainerRequests{}
+	containerData := []types.ContainerRequests{}
 	for _, c := range data.Containers {
 		nanoCores, _ := strconv.Atoi(RemoveLastChar(c.Usage.CPU))
 		kiMemory, _ := strconv.Atoi(strings.ReplaceAll(c.Usage.Memory, "Ki", ""))
-		containerData = append(containerData, ContainerRequests{Name: c.Name, CPU: int64(nanoCores / 1000000), Memory: int64(kiMemory / 1000)})
+		containerData = append(containerData, types.ContainerRequests{Name: c.Name, CPU: int64(nanoCores / 1000000), Memory: int64(kiMemory / 1000)})
 	}
-	return PodRequests{data.Metadata.Name, data.Metadata.Namespace, containerData, 0}
+	return types.PodRequests{data.Metadata.Name, data.Metadata.Namespace, containerData, 0}
 }
 
 func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.Context) bool {
@@ -252,7 +224,6 @@ func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (e
 		deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
 		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 	case "StatefulSet":
-		log.Info("STATEFUL SET HAHAHHAHA")
 		deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Kind, metav1.GetOptions{})
 		return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
 	default:
