@@ -122,9 +122,9 @@ reqsizer.jatalocks.github.io/mode=min       # Sets the request to the MINIMUM of
 ### Monitoring - Prometheus
 | Metric  | Type | Description |
 | ------------- | ------------- | ------------- |
-| cpu_offset  | Gauge  | Number of milli-cores that have been increased/removed since startup. Can be a positive/negative value.  |
-| memory_offset  | Gauge  | Number of megabits that have been increased/removed since startup. Can be a positive/negative value.  |
-| cache_size  | Gauge  | Number of pod controllers currently in cache.  |
+| kube_reqsizer.cpu_offset  | Gauge  | Number of milli-cores that have been increased/removed since startup. Can be a positive/negative value.  |
+| kube_reqsizer.memory_offset  | Gauge  | Number of megabits that have been increased/removed since startup. Can be a positive/negative value.  |
+| kube_reqsizer.cache_size  | Gauge  | Number of pod controllers currently in cache.  |
 ### Edge Cases
 
 1. All samples in a certain cycle report `0` (less than 1):

@@ -71,20 +71,24 @@ const (
 var (
 	cpuOffset = prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "cpu_offset",
-			Help: "Number of milli-cores that have been increased/removed since startup",
+			Namespace:   "kube_reqsizer",
+			Name:        "cpu_offset",
+			Help:        "Number of milli-cores that have been increased/removed since startup",
+			ConstLabels: map[string]string{},
 		},
 	)
 	memoryOffset = prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "memory_offset",
-			Help: "Number of megabits that have been increased/removed since startup",
+			Namespace: "kube_reqsizer",
+			Name:      "memory_offset",
+			Help:      "Number of megabits that have been increased/removed since startup",
 		},
 	)
 	cacheSize = prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "cache_size",
-			Help: "Number of pod controllers currently in cache",
+			Namespace: "kube_reqsizer",
+			Name:      "cache_size",
+			Help:      "Number of pod controllers currently in cache",
 		},
 	)
 )
