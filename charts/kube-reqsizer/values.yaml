@@ -15,6 +15,10 @@ persistence:
   enabled: true
 serviceMonitor: false
 
+redis:
+  auth:
+    enabled: false
+
 controllerManager:
   manager:
     image:
