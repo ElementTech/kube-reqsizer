@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -117,6 +118,7 @@ func (r *PodReconciler) ValidateCPU(currentCPU, AverageUsageCPU int64) bool {
 				if (AverageUsageCPU <= r.MaxCPU) || (r.MaxCPU == 0) {
 					// From 5 to 10
 					// ((10-5)/10 * 100) >= 50%
+					log.Info(fmt.Sprint("Average CPU Increase: ", ((float64(AverageUsageCPU-currentCPU) / float64(currentCPU)) * 100)))
 					return ((float64(AverageUsageCPU-currentCPU) / float64(currentCPU)) * 100) >= float64(r.MinCPUIncreasePercentage)
 				}
 			}
@@ -125,6 +127,7 @@ func (r *PodReconciler) ValidateCPU(currentCPU, AverageUsageCPU int64) bool {
 				if (AverageUsageCPU >= r.MinCPU) || (r.MinCPU == 0) {
 					// From 10 to 5
 					// ((10-5)/10 * 100) >= 50%
+					log.Info(fmt.Sprint("Average CPU Decrease: ", ((float64(currentCPU-AverageUsageCPU) / float64(currentCPU)) * 100)))
 					return ((float64(currentCPU-AverageUsageCPU) / float64(currentCPU)) * 100) >= float64(r.MinCPUDecreasePercentage)
 				}
 			}
@@ -138,12 +141,14 @@ func (r *PodReconciler) ValidateMemory(currentMemory, AverageUsageMemory int64) 
 		if AverageUsageMemory > currentMemory {
 			if r.EnableIncrease {
 				if (AverageUsageMemory <= r.MaxMemory) || (r.MaxMemory == 0) {
+					log.Info(fmt.Sprint("Average Memory Increase: ", ((float64(AverageUsageMemory-currentMemory) / float64(currentMemory)) * 100)))
 					return ((float64(AverageUsageMemory-currentMemory) / float64(currentMemory)) * 100) >= float64(r.MinMemoryIncreasePercentage)
 				}
 			}
 		} else {
 			if r.EnableReduce {
 				if (AverageUsageMemory >= r.MinMemory) || (r.MinMemory == 0) {
+					log.Info(fmt.Sprint("Average Memory Decrease: ", ((float64(currentMemory-AverageUsageMemory) / float64(currentMemory)) * 100)))
 					return ((float64(currentMemory-AverageUsageMemory) / float64(currentMemory)) * 100) >= float64(r.MinMemoryDecreasePercentage)
 				}
 			}
