@@ -36,6 +36,10 @@ spec:
         - --max-memory={{.Values.maxMemory}}
         - --min-cpu={{.Values.minCPU}}
         - --min-memory={{.Values.minMemory}}
+        - --min-cpu-increase-percentage={{.Values.minCPUIncreasePercentage}}
+        - --min-memory-increase-percentage={{.Values.minMemoryIncreasePercentage}}
+        - --min-cpu-decreases-percentage={{.Values.minCPUDecreasePercentage}}
+        - --min-memory-decrease-percentage={{.Values.minMemoryDecreasePercentage}}
         - --cpu-factor={{.Values.cpuFactor}}
         - --memory-factor={{.Values.memoryFactor}}        
         - --concurrent-workers={{.Values.concurrentWorkers}}
