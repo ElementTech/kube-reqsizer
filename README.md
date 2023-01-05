@@ -42,6 +42,10 @@ maxMemory: 0
 minMemory: 0
 maxCPU: 0
 minCPU: 0
+minCPUIncreasePercentage: 0
+minCPUDecreasePercentage: 0
+minMemoryIncreasePercentage: 0
+minMemoryDecreasePercentage: 0
 cpuFactor: 1
 memoryFactor: 1
 logLevel: info
@@ -85,6 +89,15 @@ persistence:
 --max-memory int (default 0)
 --min-cpu int (default 0)
 --min-memory int (default 0)
+
+# Min CPU and Memory (%) the controller will count as a condition to resize requests.
+# For Example:
+# If reqsizer want so change from 5m to 10m, that's a 50% increase. 
+# It will ignore this if min-cpu-increase-percentage is less than 50.
+--min-cpu-increase-percentage int (default 0)
+--min-memory-increase-percentage int (default 0)
+--min-cpu-decrease-percentage int (default 0)
+--min-memory-decrease-percentage int (default 0)
 
 # Multiply requests when reconciling
 --cpu-factor float (default 1)

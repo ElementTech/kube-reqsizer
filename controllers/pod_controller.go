@@ -57,6 +57,10 @@ type PodReconciler struct {
 	MaxCPU                      int64
 	MinMemory                   int64
 	MinCPU                      int64
+	MinCPUIncreasePercentage    int64
+	MinMemoryIncreasePercentage int64
+	MinCPUDecreasePercentage    int64
+	MinMemoryDecreasePercentage int64
 	CPUFactor                   float64
 	MemoryFactor                float64
 	RedisClient                 rediscache.RedisClient
