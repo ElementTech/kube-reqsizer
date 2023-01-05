@@ -7,6 +7,10 @@ maxMemory: 0
 minMemory: 0
 maxCPU: 0
 minCPU: 0
+minCPUIncreasePercentage: 0
+minCPUDecreasePercentage: 0
+minMemoryIncreasePercentage: 0
+minMemoryDecreasePercentage: 0
 cpuFactor: 1
 memoryFactor: 1
 logLevel: info

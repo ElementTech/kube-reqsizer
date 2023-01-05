@@ -65,6 +65,10 @@ func main() {
 	var maxCPU int64
 	var minMemory int64
 	var minCPU int64
+	var minCPUIncreasePercentage int64
+	var minCPUDecreasePercentage int64
+	var minMemoryIncreasePercentage int64
+	var minMemoryDecreasePercentage int64
 	var concurrentWorkers uint
 
 	var cpuFactor float64
@@ -81,6 +85,11 @@ func main() {
 	flag.StringVar(&redisPort, "redis-port", "6379", "Redis port")
 	flag.StringVar(&redisPassword, "redis-password", "", "Redis password")
 	flag.UintVar(&redisDB, "redis-db", 0, "Redis DB number")
+
+	flag.Int64Var(&minCPUIncreasePercentage, "min-cpu-increase-percentage", 0, "Minimum difference in percentage that is required to increase CPU requests")
+	flag.Int64Var(&minMemoryIncreasePercentage, "min-memory-increase-percentage", 0, "Minimum difference in percentage that is required to increase Memory requests")
+	flag.Int64Var(&minCPUDecreasePercentage, "min-cpu-decrease-percentage", 0, "Minimum difference in percentage that is required to decrease CPU requests")
+	flag.Int64Var(&minMemoryDecreasePercentage, "min-memory-decrease-percentage", 0, "Minimum difference in percentage that is required to decrease Memory requests")
 
 	flag.BoolVar(&enableIncrease, "enable-increase", true, "Enables the controller to increase pod requests")
 	flag.BoolVar(&enableReduce, "enable-reduce", true, "Enables the controller to reduce pod requests")
@@ -160,6 +169,10 @@ func main() {
 		MaxCPU:                      maxCPU,
 		MinMemory:                   minMemory,
 		MinCPU:                      minCPU,
+		MinCPUIncreasePercentage:    minCPUIncreasePercentage,
+		MinMemoryIncreasePercentage: minMemoryIncreasePercentage,
+		MinCPUDecreasePercentage:    minCPUDecreasePercentage,
+		MinMemoryDecreasePercentage: minMemoryDecreasePercentage,
 		CPUFactor:                   cpuFactor,
 		MemoryFactor:                memoryFactor,
 		RedisClient:                 rediscache.RedisClient{Client: redisClient},
