@@ -92,8 +92,10 @@ persistence:
 
 # Min CPU and Memory (%) the controller will count as a condition to resize requests.
 # For Example:
-# If reqsizer want so change from 5m to 10m, that's a 50% increase. 
-# It will ignore this if min-cpu-increase-percentage is less than 50.
+# If reqsizer wants to increase from 90m to 100m, that's a 10% increase. 
+# It will ignore it if min-cpu-increase-percentage is more than 10.
+# If reqsizer wants to decrease from 100m to 10m, that's a 90% decrease. 
+# It will ignore it if min-cpu-decrease-percentage is more than 90.
 --min-cpu-increase-percentage int (default 0)
 --min-memory-increase-percentage int (default 0)
 --min-cpu-decrease-percentage int (default 0)
