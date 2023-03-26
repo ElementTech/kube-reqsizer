@@ -25,7 +25,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/localcache"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
-	"github.com/jatalocks/kube-reqsizer/pkg/git/kubegit"
+	kubegit "github.com/jatalocks/kube-reqsizer/pkg/git/client"
 	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
