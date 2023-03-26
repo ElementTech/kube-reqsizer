@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -178,7 +179,10 @@ func GetPodRequests(pod corev1.Pod) types.PodRequests {
 func GeneratePodRequestsObjectFromRestData(restData []byte) types.PodRequests {
 	s := restData[:]
 	data := types.PodMetricsRestData{}
-	json.Unmarshal([]byte(s), &data)
+	err := json.Unmarshal([]byte(s), &data)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	containerData := []types.ContainerRequests{}
 	for _, c := range data.Containers {
 		nanoCores, _ := strconv.Atoi(RemoveLastChar(c.Usage.CPU))
