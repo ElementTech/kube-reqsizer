@@ -168,10 +168,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			SumPodRequest.Sample = 0
 			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))
 			if r.EnablePersistence {
-				r.RedisClient.AddToCache(SumPodRequest)
+				if err := r.RedisClient.AddToCache(SumPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
 				log.Info(fmt.Sprint("Items in Cache: ", r.RedisClient.CacheSize()))
 			} else {
-				localcache.AddToCache(cacheStore, SumPodRequest)
+				if err := localcache.AddToCache(cacheStore, SumPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
 				log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
 			}
 		} else {
