@@ -224,95 +224,51 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				}
 			}
 		}
-		if (SumPodRequest.Sample >= r.SampleSize) && r.MinimumUptimeOfPodInParent(pod, ctx) {
-			log.Info("Sample Size and Minimum Time have been reached")
-			PodChange := false
-			Requests := []types.NewContainerRequests{}
+		if SumPodRequest.Sample >= r.SampleSize && r.MinimumUptimeOfPodInParent(pod, ctx) {
+			PodChange, Requests := false, []types.NewContainerRequests{}
 			for _, c := range SumPodRequest.ContainerRequests {
-				AverageUsageCPU := c.CPU / int64(SumPodRequest.Sample)
-				AverageUsageMemory := c.Memory / int64(SumPodRequest.Sample)
-				PodRequestsData := GetPodRequests(pod)
-				for _, currentC := range PodRequestsData.ContainerRequests {
-					if currentC.Name == c.Name {
-						for i, v := range pod.Spec.Containers {
-							if v.Name == c.Name {
-								if AverageUsageCPU < r.MinCPU && (r.MinCPU > 0) {
-									AverageUsageCPU = r.MinCPU
-								}
-								if AverageUsageCPU > r.MaxCPU && (r.MaxCPU > 0) {
-									AverageUsageCPU = r.MaxCPU
-								}
-								if AverageUsageMemory < r.MinMemory && (r.MinMemory > 0) {
-									AverageUsageMemory = r.MinMemory
-								}
-								if AverageUsageMemory > r.MaxMemory && (r.MaxMemory > 0) {
-									AverageUsageMemory = r.MaxMemory
-								}
-								log.Info(fmt.Sprint(c.Name, " Comparing CPU: ", fmt.Sprintf("%dm", AverageUsageCPU), " <> ", fmt.Sprintf("%dm", currentC.CPU)))
-								log.Info(fmt.Sprint(c.Name, " Comparing Memory: ", fmt.Sprintf("%dMi", AverageUsageMemory), " <> ", fmt.Sprintf("%dMi", currentC.Memory)))
-								if pod.Spec.Containers[i].Resources.Requests != nil {
-									switch r.GetPodMode(pod, ctx) {
-									case "average":
-										if r.ValidateCPU(currentC.CPU, AverageUsageCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(AverageUsageCPU)*r.CPUFactor)))
-											cpuOffset.Add(float64(int(float64(AverageUsageCPU)*r.CPUFactor) - int(currentC.CPU)))
-											PodChange = true
-										}
-										if r.ValidateMemory(currentC.Memory, AverageUsageMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(AverageUsageMemory)*r.MemoryFactor)))
-											memoryOffset.Add(float64(int(float64(AverageUsageMemory)*r.MemoryFactor) - int(currentC.Memory)))
-											PodChange = true
-										}
-									case "min":
-										if r.ValidateCPU(currentC.CPU, c.MinCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MinCPU)*r.CPUFactor)))
-											cpuOffset.Add(float64(int(float64(c.MinCPU)*r.CPUFactor) - int(currentC.CPU)))
-											PodChange = true
-										}
-										if r.ValidateMemory(currentC.Memory, c.MinMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MinMemory)*r.MemoryFactor)))
-											memoryOffset.Add(float64(int(float64(c.MinMemory)*r.MemoryFactor) - int(currentC.Memory)))
-											PodChange = true
-										}
-									case "max":
-										if r.ValidateCPU(currentC.CPU, c.MaxCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MaxCPU)*r.CPUFactor)))
-											cpuOffset.Add(float64(int(float64(c.MaxCPU)*r.CPUFactor) - int(currentC.CPU)))
-											PodChange = true
-										}
-										if r.ValidateMemory(currentC.Memory, c.MaxMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MaxMemory)*r.MemoryFactor)))
-											memoryOffset.Add(float64(int(float64(c.MaxMemory)*r.MemoryFactor) - int(currentC.Memory)))
-											PodChange = true
-										}
-									}
-								}
-
-								Requests = append(Requests, types.NewContainerRequests{Name: c.Name, Requests: pod.Spec.Containers[i].Resources})
-							}
+				AvgCPU, AvgMem := c.CPU/int64(SumPodRequest.Sample), c.Memory/int64(SumPodRequest.Sample)
+				for _, currentC := range GetPodRequests(pod).ContainerRequests {
+					if currentC.Name != c.Name {
+						continue
+					}
+					for i, v := range pod.Spec.Containers {
+						if v.Name != c.Name || pod.Spec.Containers[i].Resources.Requests == nil {
+							continue
 						}
+						var cpuReq, memReq resource.Quantity
+						switch r.GetPodMode(pod, ctx) {
+						case "average":
+							if !r.ValidateCPU(currentC.CPU, AvgCPU) || !r.ValidateMemory(currentC.Memory, AvgMem) {
+								continue
+							}
+							cpuReq, memReq = resource.MustParse(fmt.Sprintf("%dm", int(float64(AvgCPU)*r.CPUFactor))), resource.MustParse(fmt.Sprintf("%dMi", int(float64(AvgMem)*r.MemoryFactor)))
+						case "min":
+							if !r.ValidateCPU(currentC.CPU, c.MinCPU) || !r.ValidateMemory(currentC.Memory, c.MinMemory) {
+								continue
+							}
+							cpuReq, memReq = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MinCPU)*r.CPUFactor))), resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MinMemory)*r.MemoryFactor)))
+						case "max":
+							if !r.ValidateCPU(currentC.CPU, c.MaxCPU) || !r.ValidateMemory(currentC.Memory, c.MaxMemory) {
+								continue
+							}
+							cpuReq, memReq = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MaxCPU)*r.CPUFactor))), resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MaxMemory)*r.MemoryFactor)))
+						}
+						pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU], pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = cpuReq, memReq
+						Requests, PodChange = append(Requests, types.NewContainerRequests{Name: c.Name, Requests: pod.Spec.Containers[i].Resources}), true
 					}
 				}
 			}
 			if r.EnablePersistence {
-				if err := r.RedisClient.DeleteFromCache(SumPodRequest); err != nil {
-					log.Error(err, err.Error())
-				}
+				r.RedisClient.DeleteFromCache(SumPodRequest)
 			} else {
-				if err := localcache.DeleteFromCache(cacheStore, LatestPodRequest); err != nil {
-					log.Error(err, err.Error())
-				}
+				localcache.DeleteFromCache(cacheStore, LatestPodRequest)
 			}
 			if PodChange {
 				pod.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
-
-				log.Info("Pod Requests Will Change")
-
 				if len(pod.OwnerReferences) == 0 {
-					log.Info("Pod has no owner")
 					return r.UpdateKubeObject(&pod, ctx)
 				}
-
 				podSpec, deployment, _, err := r.GetPodParentKind(pod, ctx)
 				if err != nil {
 					return ctrl.Result{}, err
@@ -322,10 +278,16 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					return r.UpdateKubeObject(deployment.(client.Object), ctx)
 				}
 				if r.GithubMode {
-					git.UpdateContainerRequestsInFile(pod.Annotations["reqsizer.jatalocks.github.io/github/path"], Requests, pod.Annotations["reqsizer.jatalocks.github.io/github/repo"], pod.Annotations["reqsizer.jatalocks.github.io/github/owner"])
+					path, pathExists := pod.Annotations["reqsizer.jatalocks.github.io/github/path"]
+					repo, repoExists := pod.Annotations["reqsizer.jatalocks.github.io/github/repo"]
+					owner, ownerExists := pod.Annotations["reqsizer.jatalocks.github.io/github/owner"]
+					if pathExists && repoExists && ownerExists {
+						git.UpdateContainerRequestsInFile(path, Requests, repo, owner)
+					}
 				}
 			}
 		}
+
 	}
 
 	return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
