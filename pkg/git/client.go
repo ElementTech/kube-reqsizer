@@ -1,20 +1,21 @@
-package kubegit
+package git
 
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/google/go-github/v50/github"
 	"github.com/jatalocks/kube-reqsizer/types"
+	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func UpdateContainerRequestsInFile(filePath string, containerReqs []types.NewContainerRequests, ghToken, owner, repo string) error {
+func UpdateContainerRequestsInFile(filePath string, containerReqs []types.NewContainerRequests, owner, repo string) error {
 	// Read the YAML file and unmarshal it into an unstructured object
+	ctx := context.Background()
 	file, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %v", err)
@@ -62,8 +63,11 @@ func UpdateContainerRequestsInFile(filePath string, containerReqs []types.NewCon
 	prBody := fmt.Sprintf("Update resource requests for %d containers in file %q", len(containerReqs), filePath)
 	head := fmt.Sprintf("%s:%s", owner, filepath.Base(filePath))
 	base := "main"
-	client := github.NewClient(&http.Client{})
-	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
 	pullRequests, _, err := client.PullRequests.List(ctx, owner, repo, nil)
 	if err != nil {
 		return fmt.Errorf("failed to list pull requests: %v", err)

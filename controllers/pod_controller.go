@@ -26,10 +26,10 @@ import (
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/localcache"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
 
-	kubegit "github.com/jatalocks/kube-reqsizer/pkg/git/client"
+	"github.com/jatalocks/kube-reqsizer/pkg/git"
 	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/prometheus/client_golang/prometheus"
-	corev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1" // nolint:all
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -313,7 +313,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					return r.UpdateKubeObject(&pod, ctx)
 				}
 
-				err, podSpec, deployment, _ := r.GetPodParentKind(pod, ctx)
+				podSpec, deployment, _, err := r.GetPodParentKind(pod, ctx)
 				if err != nil {
 					return ctrl.Result{}, err
 				}
@@ -322,7 +322,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					return r.UpdateKubeObject(deployment.(client.Object), ctx)
 				}
 				if r.GithubMode {
-					kubegit.UpdateContainerRequestsInFile()
+					git.UpdateContainerRequestsInFile(pod.Annotations["reqsizer.jatalocks.github.io/github/path"], Requests, pod.Annotations["reqsizer.jatalocks.github.io/github/repo"], pod.Annotations["reqsizer.jatalocks.github.io/github/owner"])
 				}
 			}
 		}

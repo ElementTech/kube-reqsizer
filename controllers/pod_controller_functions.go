@@ -11,7 +11,8 @@ import (
 
 	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/labstack/gommon/log"
-	corev1 "k8s.io/api/core/v1"
+
+	corev1 "k8s.io/api/core/v1" // nolint:all
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -171,7 +172,7 @@ func GetPodRequests(pod corev1.Pod) types.PodRequests {
 		}
 		containerData = append(containerData, types.ContainerRequests{Name: c.Name, CPU: int64(nanoCores), Memory: int64(miMemory)})
 	}
-	return types.PodRequests{pod.Name, pod.Namespace, containerData, 0}
+	return types.PodRequests{Name: pod.Name, Namespace: pod.Namespace, ContainerRequests: containerData, Sample: 0}
 }
 
 func GeneratePodRequestsObjectFromRestData(restData []byte) types.PodRequests {
@@ -184,7 +185,7 @@ func GeneratePodRequestsObjectFromRestData(restData []byte) types.PodRequests {
 		kiMemory, _ := strconv.Atoi(strings.ReplaceAll(c.Usage.Memory, "Ki", ""))
 		containerData = append(containerData, types.ContainerRequests{Name: c.Name, CPU: int64(nanoCores / 1000000), Memory: int64(kiMemory / 1000)})
 	}
-	return types.PodRequests{data.Metadata.Name, data.Metadata.Namespace, containerData, 0}
+	return types.PodRequests{Name: data.Metadata.Name, Namespace: data.Metadata.Namespace, ContainerRequests: containerData, Sample: 0}
 }
 
 func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.Context) bool {
@@ -192,7 +193,7 @@ func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.C
 	if len(pod.OwnerReferences) == 0 {
 		return time.Since(pod.CreationTimestamp.Time).Seconds() >= r.MinSecondsBetweenPodRestart
 	}
-	err, _, _, deploymentName := r.GetPodParentKind(pod, ctx)
+	_, _, deploymentName, err := r.GetPodParentKind(pod, ctx)
 	if err != nil {
 		log.Error(err)
 		return false
@@ -216,32 +217,32 @@ func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.C
 	return overAllLength != 0
 }
 
-func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (error, *v1.PodSpec, interface{}, string) {
+func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (*v1.PodSpec, interface{}, string, error) {
 	if len(pod.OwnerReferences) > 0 {
 		switch pod.OwnerReferences[0].Kind {
 		case "ReplicaSet":
 			replica, err := r.ClientSet.AppsV1().ReplicaSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
 			if err != nil {
 				log.Error(err, err.Error())
-				return err, nil, nil, ""
+				return nil, nil, "", err
 			}
 			deployment, err := r.ClientSet.AppsV1().Deployments(pod.Namespace).Get(ctx, replica.OwnerReferences[0].Name, metav1.GetOptions{})
 			if replica.OwnerReferences[0].Kind == "Deployment" {
-				return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
+				return &deployment.Spec.Template.Spec, deployment, deployment.Name, err
 			} else {
-				return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
+				return nil, nil, "", errors.New("is Owned by Unknown CRD")
 			}
 		case "DaemonSet":
 			deployment, err := r.ClientSet.AppsV1().DaemonSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
-			return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
+			return &deployment.Spec.Template.Spec, deployment, deployment.Name, err
 		case "StatefulSet":
 			deployment, err := r.ClientSet.AppsV1().StatefulSets(pod.Namespace).Get(ctx, pod.OwnerReferences[0].Name, metav1.GetOptions{})
-			return err, &deployment.Spec.Template.Spec, deployment, deployment.Name
+			return &deployment.Spec.Template.Spec, deployment, deployment.Name, err
 		default:
-			return errors.New("Is Owned by Unknown CRD"), nil, nil, ""
+			return nil, nil, "", errors.New("is Owned by Unknown CRD")
 		}
 	} else {
-		return errors.New("Pod Has No Owner"), nil, nil, ""
+		return nil, nil, "", errors.New("pod Has No Owner")
 	}
 }
 
