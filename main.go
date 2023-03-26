@@ -80,7 +80,13 @@ func main() {
 	var redisPort string
 	var redisDB uint
 
+	var githubMode bool
+	var verboseMode bool
+
 	flag.BoolVar(&enablePersistence, "enable-persistence", false, "Uses Redis as a persistent cache")
+	flag.BoolVar(&enablePersistence, "github-mode", false, "Creates pull requests for resource changes using annotations")
+	flag.BoolVar(&enablePersistence, "verbose-mode", false, "Disable real-time resource applies. Logs only.")
+
 	flag.StringVar(&redisHost, "redis-host", "localhost", "Redis host address")
 	flag.StringVar(&redisPort, "redis-port", "6379", "Redis port")
 	flag.StringVar(&redisPassword, "redis-password", "", "Redis password")
@@ -175,6 +181,8 @@ func main() {
 		MinMemoryDecreasePercentage: minMemoryDecreasePercentage,
 		CPUFactor:                   cpuFactor,
 		MemoryFactor:                memoryFactor,
+		GithubMode:                  githubMode,
+		VerboseMode:                 verboseMode,
 		RedisClient:                 rediscache.RedisClient{Client: redisClient},
 		EnablePersistence:           enablePersistence,
 	}).SetupWithManager(mgr, concurrentWorkers); err != nil {

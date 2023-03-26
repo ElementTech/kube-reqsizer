@@ -25,6 +25,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/localcache"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
+	"github.com/jatalocks/kube-reqsizer/pkg/git/kubegit"
 	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -65,6 +66,8 @@ type PodReconciler struct {
 	MemoryFactor                float64
 	RedisClient                 rediscache.RedisClient
 	EnablePersistence           bool
+	GithubMode                  bool
+	VerboseMode                 bool
 }
 
 const (
@@ -313,10 +316,13 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				if err != nil {
 					return ctrl.Result{}, err
 				}
-
-				UpdatePodController(podSpec, Requests, ctx)
-
-				return r.UpdateKubeObject(deployment.(client.Object), ctx)
+				if !r.VerboseMode {
+					UpdatePodController(podSpec, Requests, ctx)
+					return r.UpdateKubeObject(deployment.(client.Object), ctx)
+				}
+				if r.GithubMode {
+					kubegit.UpdateContainerRequestsInFile()
+				}
 			}
 		}
 	}
