@@ -1,4 +1,8 @@
 enabledAnnotation: true
+githubMode: 
+  enabled: false
+  token: ghp_abc123
+verboseMode: false
 sampleSize: 1
 minSeconds: 1
 enableIncrease: true
