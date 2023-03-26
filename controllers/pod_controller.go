@@ -25,7 +25,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/localcache"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
-	kubegit "github.com/jatalocks/kube-reqsizer/pkg/git/client"
+
+	// kubegit "github.com/jatalocks/kube-reqsizer/pkg/git/client"
 	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -320,9 +321,9 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					UpdatePodController(podSpec, Requests, ctx)
 					return r.UpdateKubeObject(deployment.(client.Object), ctx)
 				}
-				if r.GithubMode {
-					kubegit.UpdateContainerRequestsInFile()
-				}
+				// if r.GithubMode {
+				// 	kubegit.UpdateContainerRequestsInFile()
+				// }
 			}
 		}
 	}
