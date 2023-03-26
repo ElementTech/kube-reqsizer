@@ -209,21 +209,17 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 
 			if r.EnablePersistence {
-				err := r.RedisClient.DeleteFromCache(LatestPodRequest)
-				if err != nil {
+				if err := r.RedisClient.DeleteFromCache(LatestPodRequest); err != nil {
 					log.Error(err, err.Error())
 				}
-				err = r.RedisClient.AddToCache(SumPodRequest)
-				if err != nil {
+				if err := r.RedisClient.AddToCache(SumPodRequest); err != nil {
 					log.Error(err, err.Error())
 				}
 			} else {
-				err := localcache.DeleteFromCache(cacheStore, LatestPodRequest)
-				if err != nil {
+				if err := localcache.DeleteFromCache(cacheStore, LatestPodRequest); err != nil {
 					log.Error(err, err.Error())
 				}
-				err = localcache.AddToCache(cacheStore, SumPodRequest)
-				if err != nil {
+				if err := localcache.AddToCache(cacheStore, SumPodRequest); err != nil {
 					log.Error(err, err.Error())
 				}
 			}

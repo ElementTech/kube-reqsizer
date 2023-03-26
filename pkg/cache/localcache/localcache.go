@@ -2,18 +2,13 @@ package localcache
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/jatalocks/kube-reqsizer/types"
 	"k8s.io/client-go/tools/cache"
 )
 
 func AddToCache(cacheStore cache.Store, object types.PodRequests) error {
-	err := cacheStore.Add(object)
-	if err != nil {
-		return fmt.Errorf("failed to add key value to cache error %v", err)
-	}
-	return nil
+	return cacheStore.Add(object)
 }
 
 func FetchFromCache(cacheStore cache.Store, key string) (types.PodRequests, error) {

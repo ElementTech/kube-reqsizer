@@ -17,11 +17,7 @@ func (client RedisClient) AddToCache(object types.PodRequests) error {
 	if err != nil {
 		return fmt.Errorf("failed to add key value to cache error %v", err)
 	}
-	err = client.Client.Set(object.Name, val, 0).Err()
-	if err != nil {
-		return fmt.Errorf("failed to add key value to cache error %v", err)
-	}
-	return nil
+	return client.Client.Set(object.Name, val, 0).Err()
 }
 
 func (client RedisClient) FetchFromCache(key string) (types.PodRequests, error) {
