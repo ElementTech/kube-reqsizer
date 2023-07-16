@@ -25,7 +25,7 @@ It then goes "upstream" to the parent controller of that pod, for example *Deplo
 ## Deploy - Helm
 
 ```bash
-helm repo add kube-reqsizer https://jatalocks.github.io/kube-reqsizer/
+helm repo add kube-reqsizer https://elementtech.github.io/kube-reqsizer/
 helm repo update
 helm install kube-reqsizer/kube-reqsizer
 ```
