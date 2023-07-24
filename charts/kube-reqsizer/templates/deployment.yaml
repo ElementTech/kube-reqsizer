@@ -27,6 +27,8 @@ spec:
         - --metrics-bind-address=:8080
         - --leader-elect
         - --annotation-filter={{.Values.enabledAnnotation}}
+        - --github-mode={{.Values.githubMode.enabled}}
+        - --verbose-mode={{.Values.verboseMode}}
         - --sample-size={{.Values.sampleSize}}
         - --min-seconds={{.Values.minSeconds}}
         - --zap-log-level={{.Values.logLevel}}
@@ -52,6 +54,8 @@ spec:
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ .Values.kubernetesClusterDomain }}
+        - name: GITHUB_TOKEN
+          value: {{ .Values.githubMode.token }}
         ports:
         - name: metrics
           containerPort: {{ .Values.metricsService.port }}

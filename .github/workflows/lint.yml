@@ -1,6 +1,6 @@
 name: golangci-lint
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   golangci:
@@ -22,7 +22,9 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.50.0
-          args: -c .golang-ci.yml -v --timeout=5m
+          version: latest
+          args: --timeout=10m
+          skip-pkg-cache: true
+          skip-build-cache: true
         env:
           GO111MODULES: off

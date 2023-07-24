@@ -2,10 +2,10 @@ package rediscache
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-redis/redis"
 	"github.com/jatalocks/kube-reqsizer/types"
-	"k8s.io/klog"
 )
 
 type RedisClient struct {
@@ -15,15 +15,9 @@ type RedisClient struct {
 func (client RedisClient) AddToCache(object types.PodRequests) error {
 	val, err := json.Marshal(object)
 	if err != nil {
-		klog.Errorf("failed to add key value to cache error", err)
-		return err
+		return fmt.Errorf("failed to add key value to cache error %v", err)
 	}
-	err = client.Client.Set(object.Name, val, 0).Err()
-	if err != nil {
-		klog.Errorf("failed to add key value to cache error", err)
-		return err
-	}
-	return nil
+	return client.Client.Set(object.Name, val, 0).Err()
 }
 
 func (client RedisClient) FetchFromCache(key string) (types.PodRequests, error) {

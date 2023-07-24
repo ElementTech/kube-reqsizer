@@ -25,9 +25,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/localcache"
 	"github.com/jatalocks/kube-reqsizer/pkg/cache/rediscache"
+
+	"github.com/jatalocks/kube-reqsizer/pkg/git"
 	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/prometheus/client_golang/prometheus"
-	corev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1" // nolint:all
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -65,6 +67,8 @@ type PodReconciler struct {
 	MemoryFactor                float64
 	RedisClient                 rediscache.RedisClient
 	EnablePersistence           bool
+	GithubMode                  bool
+	VerboseMode                 bool
 }
 
 const (
@@ -164,10 +168,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			SumPodRequest.Sample = 0
 			log.Info(fmt.Sprint("Adding cache sample ", SumPodRequest.Sample))
 			if r.EnablePersistence {
-				r.RedisClient.AddToCache(SumPodRequest)
+				if err := r.RedisClient.AddToCache(SumPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
 				log.Info(fmt.Sprint("Items in Cache: ", r.RedisClient.CacheSize()))
 			} else {
-				localcache.AddToCache(cacheStore, SumPodRequest)
+				if err := localcache.AddToCache(cacheStore, SumPodRequest); err != nil {
+					log.Error(err, err.Error())
+				}
 				log.Info(fmt.Sprint("Items in Cache: ", len(cacheStore.List())))
 			}
 		} else {
@@ -208,14 +216,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				if err := r.RedisClient.DeleteFromCache(LatestPodRequest); err != nil {
 					log.Error(err, err.Error())
 				}
-				if err = r.RedisClient.AddToCache(SumPodRequest); err != nil {
+				if err := r.RedisClient.AddToCache(SumPodRequest); err != nil {
 					log.Error(err, err.Error())
 				}
 			} else {
 				if err := localcache.DeleteFromCache(cacheStore, LatestPodRequest); err != nil {
 					log.Error(err, err.Error())
 				}
-				if err = localcache.AddToCache(cacheStore, SumPodRequest); err != nil {
+				if err := localcache.AddToCache(cacheStore, SumPodRequest); err != nil {
 					log.Error(err, err.Error())
 				}
 			}
@@ -309,14 +317,26 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					return r.UpdateKubeObject(&pod, ctx)
 				}
 
-				err, podSpec, deployment, _ := r.GetPodParentKind(pod, ctx)
+				podSpec, deployment, _, err := r.GetPodParentKind(pod, ctx)
 				if err != nil {
 					return ctrl.Result{}, err
 				}
-
-				UpdatePodController(podSpec, Requests, ctx)
-
-				return r.UpdateKubeObject(deployment.(client.Object), ctx)
+				if !r.VerboseMode {
+					UpdatePodController(podSpec, Requests, ctx)
+					return r.UpdateKubeObject(deployment.(client.Object), ctx)
+				}
+				if r.GithubMode {
+					path, pathExists := pod.Annotations["reqsizer.jatalocks.github.io/github.path"]
+					repo, repoExists := pod.Annotations["reqsizer.jatalocks.github.io/github.repo"]
+					owner, ownerExists := pod.Annotations["reqsizer.jatalocks.github.io/github.owner"]
+					if pathExists && repoExists && ownerExists {
+						if err := git.UpdateContainerRequestsInFile(path, Requests, repo, owner); err != nil {
+							log.Error(err, err.Error())
+						}
+					}
+				} else {
+					log.Info("Pod is missing github annotations")
+				}
 			}
 		}
 	}

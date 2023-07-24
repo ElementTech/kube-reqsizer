@@ -5,16 +5,10 @@ import (
 
 	"github.com/jatalocks/kube-reqsizer/types"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog"
 )
 
 func AddToCache(cacheStore cache.Store, object types.PodRequests) error {
-	err := cacheStore.Add(object)
-	if err != nil {
-		klog.Errorf("failed to add key value to cache error", err)
-		return err
-	}
-	return nil
+	return cacheStore.Add(object)
 }
 
 func FetchFromCache(cacheStore cache.Store, key string) (types.PodRequests, error) {
