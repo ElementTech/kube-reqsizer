@@ -28,7 +28,6 @@ import (
 	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -250,34 +249,34 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 									switch r.GetPodMode(pod, ctx) {
 									case "average":
 										if r.ValidateCPU(currentC.CPU, AverageUsageCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(AverageUsageCPU)*r.CPUFactor)))
+											pod.Spec.Containers[i].Resources.Requests[corev1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(AverageUsageCPU)*r.CPUFactor)))
 											cpuOffset.Add(float64(int(float64(AverageUsageCPU)*r.CPUFactor) - int(currentC.CPU)))
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, AverageUsageMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(AverageUsageMemory)*r.MemoryFactor)))
+											pod.Spec.Containers[i].Resources.Requests[corev1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(AverageUsageMemory)*r.MemoryFactor)))
 											memoryOffset.Add(float64(int(float64(AverageUsageMemory)*r.MemoryFactor) - int(currentC.Memory)))
 											PodChange = true
 										}
 									case "min":
 										if r.ValidateCPU(currentC.CPU, c.MinCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MinCPU)*r.CPUFactor)))
+											pod.Spec.Containers[i].Resources.Requests[corev1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MinCPU)*r.CPUFactor)))
 											cpuOffset.Add(float64(int(float64(c.MinCPU)*r.CPUFactor) - int(currentC.CPU)))
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, c.MinMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MinMemory)*r.MemoryFactor)))
+											pod.Spec.Containers[i].Resources.Requests[corev1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MinMemory)*r.MemoryFactor)))
 											memoryOffset.Add(float64(int(float64(c.MinMemory)*r.MemoryFactor) - int(currentC.Memory)))
 											PodChange = true
 										}
 									case "max":
 										if r.ValidateCPU(currentC.CPU, c.MaxCPU) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MaxCPU)*r.CPUFactor)))
+											pod.Spec.Containers[i].Resources.Requests[corev1.ResourceCPU] = resource.MustParse(fmt.Sprintf("%dm", int(float64(c.MaxCPU)*r.CPUFactor)))
 											cpuOffset.Add(float64(int(float64(c.MaxCPU)*r.CPUFactor) - int(currentC.CPU)))
 											PodChange = true
 										}
 										if r.ValidateMemory(currentC.Memory, c.MaxMemory) {
-											pod.Spec.Containers[i].Resources.Requests[v1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MaxMemory)*r.MemoryFactor)))
+											pod.Spec.Containers[i].Resources.Requests[corev1.ResourceMemory] = resource.MustParse(fmt.Sprintf("%dMi", int(float64(c.MaxMemory)*r.MemoryFactor)))
 											memoryOffset.Add(float64(int(float64(c.MaxMemory)*r.MemoryFactor) - int(currentC.Memory)))
 											PodChange = true
 										}

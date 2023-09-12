@@ -12,7 +12,6 @@ import (
 	"github.com/jatalocks/kube-reqsizer/types"
 	"github.com/labstack/gommon/log"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -216,7 +215,7 @@ func (r *PodReconciler) MinimumUptimeOfPodInParent(pod corev1.Pod, ctx context.C
 	return overAllLength != 0
 }
 
-func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (error, *v1.PodSpec, interface{}, string) {
+func (r *PodReconciler) GetPodParentKind(pod corev1.Pod, ctx context.Context) (error, *corev1.PodSpec, interface{}, string) {
 	if len(pod.OwnerReferences) > 0 {
 		switch pod.OwnerReferences[0].Kind {
 		case "ReplicaSet":
