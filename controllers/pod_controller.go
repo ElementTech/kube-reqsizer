@@ -302,7 +302,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			if PodChange {
 				pod.Annotations["reqsizer.jatalocks.github.io/changed"] = "true"
 
-				log.Info("Pod Requests Will Change")
+				log.Info(fmt.Sprint("Requests Will Change For Pod: ",pod.metadata.name))
 
 				if len(pod.OwnerReferences) == 0 {
 					log.Info("Pod has no owner")
